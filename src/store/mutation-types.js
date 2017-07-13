@@ -1,0 +1,1 @@
+export const RECEIVE_FEEDS = 'RECEIVE_FEEDS'

@@ -6,18 +6,27 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import FeedList from '@/components/FeedList'
 
 export default {
   name: 'home',
   data() {
     return {
-      msg: 'Welcome to Pod Central',
+      msg: 'Welcome to Pod Central'
     }
   },
-  components: {
-    FeedList,
+  computed: {
+    ...mapGetters({
+      feeds: 'allFeeds'
+    })
   },
+  beforeMount() {
+    this.$store.dispatch('getAllFeeds')
+  },
+  components: {
+    FeedList
+  }
 }
 </script>
 

@@ -19,8 +19,8 @@
 export default {
   name: 'feed-list',
   props: {
-    feeds: Array,
-  },
+    feeds: Array
+  }
 }
 </script>
 
