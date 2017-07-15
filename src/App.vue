@@ -17,9 +17,9 @@
         </md-toolbar>
       </md-whiteframe>
     </md-theme>
-    <div class="content">
+    <md-theme md-name="body" class="content">
       <router-view></router-view>
-    </div>
+    </md-theme>
   </div>
 </template>
 

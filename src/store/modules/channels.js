@@ -1,4 +1,4 @@
-import dynDb from '@/api/dynamodb'
+import api from '@/api'
 import * as types from '@/store/mutation-types'
 
 // initial state
@@ -8,22 +8,22 @@ const state = {
 
 // getters
 const getters = {
-  allFeeds: state => state.all
+  allChannels: state => state.all
 }
 
 // actions
 const actions = {
-  getAllFeeds({ commit }) {
-    dynDb.getAllFeeds().then(feeds => {
-      commit(types.RECEIVE_FEEDS, { feeds })
+  getAllChannels({ commit }) {
+    api.getAllChannels().then(channels => {
+      commit(types.RECEIVE_CHANNELS, { channels })
     })
   }
 }
 
 // mutations
 const mutations = {
-  [types.RECEIVE_FEEDS](state, { feeds }) {
-    state.all = feeds
+  [types.RECEIVE_CHANNELS](state, { channels }) {
+    state.all = channels
   }
 }
 

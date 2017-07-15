@@ -12,6 +12,13 @@ Vue.material.registerTheme({
   header: {
     primary: 'black',
     accent: 'white'
+  },
+  body: {
+    primary: 'black',
+    accent: {
+      color: 'grey',
+      hue: 800
+    }
   }
 })
 

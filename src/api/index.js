@@ -1,5 +1,6 @@
 import AWS from 'aws-sdk'
 
+let channelTbl = process.env.CHANNEL_TABLE
 let config = {region: process.env.AWS_REGION, endpoint: process.env.DYNDB_URL}
 
 if (process.env.NODE_ENV !== 'production') {
@@ -9,15 +10,12 @@ if (process.env.NODE_ENV !== 'production') {
 
 let dynDb = new AWS.DynamoDB.DocumentClient(config)
 
-let db = {}
+let api = {}
 
-db.getAllFeeds = function() {
-  return new Promise((resolve, reject) => {
-    dynDb.scan({TableName: 'Channel'}, function(err, data) {
-      if (err) reject(err)
-      else resolve(data['Items'])
-    })
-  })
+api.getAllChannels = function() {
+  return dynDb.scan({TableName: channelTbl}).promise()
+    .then(data => data.Items)
+    .catch(err => console.error(err))
 }
 
-export default db
+export default api

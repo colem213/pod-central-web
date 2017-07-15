@@ -1,31 +1,22 @@
 <template>
   <md-layout md-column>
     <h1>{{ msg }}</h1>
-    <feed-list :feeds="[{'id': 1234}, {'id': 1235}]"></feed-list>
+    <channel-list />
   </md-layout>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import FeedList from '@/components/FeedList'
+import ChannelList from '@/components/ChannelList'
 
 export default {
   name: 'home',
   data() {
     return {
-      msg: 'Welcome to Pod Central'
+      msg: 'Your Podcasts'
     }
   },
-  computed: {
-    ...mapGetters({
-      feeds: 'allFeeds'
-    })
-  },
-  beforeMount() {
-    this.$store.dispatch('getAllFeeds')
-  },
   components: {
-    FeedList
+    ChannelList
   }
 }
 </script>
