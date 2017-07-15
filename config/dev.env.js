@@ -5,5 +5,6 @@ module.exports = merge(prodEnv, {
   NODE_ENV: '"development"',
   DYNDB_URL: '"http://localhost:10500"',
   CHANNEL_TABLE: '"Channel"',
+  ITEM_TABLE: '"Item"',
   AWS_REGION: '"us-east-2"',
 })

@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Home from '@/components/Home'
+import ChannelList from '@/components/ChannelList'
+import ItemList from '@/components/ItemList'
 
 Vue.use(Router)
 
@@ -8,8 +9,13 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'Home',
-      component: Home
+      name: 'ChannelList',
+      component: ChannelList
+    },
+    {
+      path: '/:channelId',
+      name: 'ItemList',
+      component: ItemList
     }
   ]
 })

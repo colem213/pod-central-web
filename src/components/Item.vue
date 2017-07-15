@@ -3,16 +3,19 @@
       <md-card-area>
         <md-layout>
           <md-card-media>
-            <a href="#"><img :src="channel.imageUrl" class="channel-poster"></img></a>
+            <a href="#"><img :src="item.imageUrl" class="item-poster"></img></a>
           </md-card-media>
           <md-layout md-column>
             <md-card-header>
-              <router-link :to="{name: 'ItemList', params: {channelId: channel.id}}"><div class="md-title">{{channel.title}}</div></router-link>
-              <div class="md-subhead">{{channel.category}}</div>
+              <a href="#"><div class="md-title">{{item.title}}</div></a>
+              <div class="md-subhead">{{item.pubDate}}</div>
             </md-card-header>
 
             <md-card-content>
-              {{channel.description}}
+              {{item.description}}
+            </md-card-content>
+            <md-card-content>
+              {{item.keywords.join(', ')}}
             </md-card-content>
           </md-layout>
         </md-layout>
@@ -22,8 +25,8 @@
 
 <script>
 export default {
-  name: 'channel',
-  props: ['channel']
+  name: 'item',
+  props: ['item']
 }
 </script>
 
@@ -32,7 +35,7 @@ export default {
   margin-bottom: 20px;
   padding: 10px;
 }
-.channel-poster {
+.item-poster {
   max-width: 200px;
 }
 </style>
