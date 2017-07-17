@@ -30,7 +30,8 @@ api.getItemsByChannel = function(id) {
     ExpressionAttributeValues: {
       ':id': id
     },
-    Select: 'ALL_ATTRIBUTES'
+    Select: 'ALL_ATTRIBUTES',
+    Limit: 10
   }).promise()
     .then(data => data.Items)
     .catch(err => console.error(err))

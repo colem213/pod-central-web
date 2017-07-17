@@ -24,6 +24,10 @@ const actions = {
 const mutations = {
   [types.RECEIVE_CHANNELS](state, { channels }) {
     state.all = channels
+    state.channels = channels.reduce((acc, ch) => {
+      acc[ch.id] = ch
+      return acc
+    }, {})
   }
 }
 
