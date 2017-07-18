@@ -11,7 +11,7 @@
               <md-button href="#">Sign In</md-button>
             </md-layout>
             <md-layout md-flex="15">
-              <md-button>Sign Up</md-button>
+              <sign-up/>
             </md-layout>
           </md-layout>
         </md-toolbar>
@@ -24,8 +24,13 @@
 </template>
 
 <script>
+import SignUp from '@/components/SignUp'
+
 export default {
-  name: 'app'
+  name: 'app',
+  components: {
+    SignUp
+  }
 }
 </script>
 
