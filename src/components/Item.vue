@@ -18,7 +18,7 @@
               {{item.keywords.join(', ')}}
             </md-card-content>
             <md-card-content>
-              <audio :id="item.id" :src="audio[0].url" width="80%" preload="metadata"/>
+              <media-player :id="item.id" :media="item.media" width="100%" preload="metadata"/>
             </md-card-content>
           </md-layout>
         </md-layout>
@@ -27,31 +27,13 @@
 </template>
 
 <script>
-import 'mediaelement/full'
-import '../../node_modules/mediaelement/build/mediaelementplayer.css'
-
-const {MediaElementPlayer} = global
+import MediaPlayer from '@/components/MediaPlayer'
 
 export default {
   name: 'item',
   props: ['item'],
-  computed: {
-    audio: function() {
-      return this.item.media.filter(media => media.medium === 'audio')
-    }
-  },
-  mounted() {
-    /* eslint-disable no-new */
-    this.player = new MediaElementPlayer(this.item.id, {
-      class: 'media',
-      preload: 'metadata'
-    })
-  },
-  beforeDestroy() {
-    if (!this.player.paused) {
-      this.player.pause()
-    }
-    this.player.remove()
+  components: {
+    MediaPlayer
   }
 }
 </script>
