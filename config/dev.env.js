@@ -3,8 +3,8 @@ var prodEnv = require('./prod.env')
 
 module.exports = merge(prodEnv, {
   NODE_ENV: '"development"',
-  DYNDB_URL: '"http://localhost:10500"',
-  CHANNEL_TABLE: '"Channel"',
-  ITEM_TABLE: '"Item"',
+  AWS_DYNDB_URL: '"http://localhost:10500"',
+  AWS_DYNDB_CHANNEL_TABLE: '"Channel"',
+  AWS_DYNDB_ITEM_TABLE: '"Item"',
   AWS_REGION: '"us-east-2"',
 })

@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <notify />
     <md-theme md-name="header">
       <md-whiteframe>
         <md-toolbar>
@@ -8,10 +9,11 @@
           </md-layout>
           <md-layout md-align="end">
             <md-layout md-flex="15">
-              <md-button href="#">Sign In</md-button>
+              <sign-in/>
             </md-layout>
             <md-layout md-flex="15">
               <sign-up/>
+              <confirm-code/>
             </md-layout>
           </md-layout>
         </md-toolbar>
@@ -24,12 +26,21 @@
 </template>
 
 <script>
+import SignIn from '@/components/SignIn'
 import SignUp from '@/components/SignUp'
+import ConfirmCode from '@/components/ConfirmCode'
+import Notify from '@/components/Notify'
 
 export default {
   name: 'app',
   components: {
-    SignUp
+    SignIn,
+    SignUp,
+    ConfirmCode,
+    Notify
+  },
+  created() {
+    this.$store.dispatch('getCurrentUser')
   }
 }
 </script>

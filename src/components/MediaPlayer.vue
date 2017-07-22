@@ -6,9 +6,9 @@
 
 <script>
 import 'mediaelement/full'
-import '../../node_modules/mediaelement/build/mediaelementplayer.css'
+import 'mediaelement/build/mediaelementplayer.css'
 
-const {MediaElementPlayer} = global
+const { MediaElementPlayer } = global
 
 export default {
   name: 'media-player',

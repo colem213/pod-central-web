@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueMaterial from 'vue-material'
-import '../node_modules/vue-material/dist/vue-material.css'
+import 'vue-material/dist/vue-material.css'
 import VeeValidate from 'vee-validate'
 import App from './App'
 import store from './store'
@@ -9,7 +9,7 @@ import router from './router'
 Vue.config.productionTip = false
 
 Vue.use(VueMaterial)
-Vue.use(VeeValidate)
+Vue.use(VeeValidate, { inject: false })
 
 Vue.material.registerTheme({
   header: {

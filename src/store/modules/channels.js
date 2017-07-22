@@ -3,7 +3,8 @@ import * as types from '@/store/mutation-types'
 
 // initial state
 const state = {
-  all: []
+  all: [],
+  channels: {}
 }
 
 // getters
