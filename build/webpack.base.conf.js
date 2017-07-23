@@ -1,4 +1,5 @@
 var path = require('path')
+var Dotenv = require('dotenv-webpack')
 var utils = require('./utils')
 var config = require('../config')
 var vueLoaderConfig = require('./vue-loader.conf')
@@ -25,6 +26,12 @@ module.exports = {
       '@': resolve('src')
     }
   },
+  plugins: [
+    new Dotenv({
+      path: './.env',
+      systemvars: true
+    })
+  ],
   module: {
     rules: [
       {

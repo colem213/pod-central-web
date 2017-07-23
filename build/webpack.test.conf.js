@@ -17,12 +17,7 @@ var webpackConfig = merge(baseConfig, {
       // see discussion at https://github.com/vuejs/vue-loader/issues/724
       'scss-loader': 'sass-loader'
     }
-  },
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.env': require('../config/test.env')
-    })
-  ]
+  }
 })
 
 // no need for app entry during tests

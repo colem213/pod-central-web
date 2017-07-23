@@ -1,0 +1,24 @@
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AutoVerifiedAttributes: ['email']
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 6
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+          RequireUppercase: false
+  WebUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      GenerateSecret: false
+      UserPoolId: !Ref UserPool
+Outputs:
+  userPoolId:
+    Description: User Pool ID
+    Value: !Ref UserPool
+  clientId:
+    Description: User Pool Web Client ID
+    Value: !Ref WebUserPoolClient
