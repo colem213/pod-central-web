@@ -7,18 +7,18 @@ const state = {
     user: {
       username: null
     },
-    mustConfirm: null,
-    isAnonymous: true,
-    isAuthenticated: false
+    isConfirmed: null,
+    isAnon: true,
+    isAuth: false
   }
 }
 
 // getters
 const getters = {
   user: state => state.auth.user,
-  isAnonymous: state => state.auth.isAnonymous,
-  mustConfirm: state => state.auth.mustConfirm,
-  isAuthenticated: state => state.auth.isAuthenticated
+  isAnon: state => state.auth.isAnon,
+  isConfirmed: state => state.auth.isConfirmed,
+  isAuth: state => state.auth.isAuth
 }
 
 // actions
@@ -32,25 +32,34 @@ const actions = {
     api.signIn(form).then(auth => {
       commit(types.RECEIVE_AUTH, auth)
     }).catch(err => {
-      console.log(JSON.stringify(err))
       commit(types.UPDATE_MESSAGE, { type: 'error', text: err.message })
+      commit(types.RECEIVE_AUTH, err.state)
     })
   },
   getCurrentUser({ commit }) {
     api.getCurrentUser().then(user => {
-      let data = { user }
-      commit(types.RECEIVE_AUTH, { data })
+      console.log(JSON.stringify(user))
+      commit(types.RECEIVE_AUTH, user)
+    }).catch(err => {
+      console.log(JSON.stringify(err))
     })
   },
-  confirmCode({ commit }, form) {
-
+  confirmCode({ commit }, code) {
+    api.confirmCode(code).then(confirmed => {
+      commit(types.RECEIVE_AUTH, { isConfirmed: confirmed })
+    })
+  },
+  resendConfirmCode({ commit }, email) {
+    api.resendConfirmCode(email).then(result => {
+      commit(types.UPDATE_MESSAGE, { type: 'success', text: 'Confirmation Code Resent' })
+      commit(types.RECEIVE_AUTH, { isConfirmed: false })
+    })
   }
 }
 
 // mutations
 const mutations = {
   [types.RECEIVE_AUTH](state, auth) {
-    console.log(auth)
     state.auth = { ...state.auth, ...auth }
   }
 }

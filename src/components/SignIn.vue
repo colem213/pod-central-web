@@ -34,6 +34,11 @@ export default {
       password: ''
     }
   },
+  computed: {
+    username() {
+      return this.email.replace('@', '_')
+    }
+  },
   methods: {
     close(ref) {
       this.$refs[ref].close()
@@ -45,7 +50,7 @@ export default {
     submit: function() {
       this.$validator.validateAll().then(result => {
         if (!result) return
-        else this.$store.dispatch('signIn', {email: this.email, password: this.password})
+        else this.$store.dispatch('signIn', {username: this.username, password: this.password})
       })
     }
   }

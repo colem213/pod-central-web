@@ -12,7 +12,7 @@
           </md-input-container>
           <md-input-container :class="{'md-input-invalid': errors.has('password')}">
             <label>Password</label>
-            <md-input name="password" type="password" v-model="password" v-validate data-vv-rules="required|min:8|confirmed:password_confirmation" required/>
+            <md-input name="password" type="password" v-model="password" v-validate data-vv-rules="required|confirmed:password_confirmation" required/>
             <span class="md-error">{{errors.first('password')}}</span>
           </md-input-container>
           <md-input-container>
@@ -24,7 +24,7 @@
         </form>
       </md-dialog-content>
     </md-dialog>
-    <md-button id="sign-up-form" v-if="isAnonymous" @click="$refs.signup.open()">Sign Up</md-button>
+    <md-button id="sign-up-form" v-if="isAnon" @click="$refs.signup.open()">Sign Up</md-button>
   </md-layout>
 </template>
 
@@ -41,11 +41,14 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['isAnonymous'])
+    ...mapGetters(['isAnon']),
+    username() {
+      return this.email.replace('@', '_')
+    }
   },
   watch: {
-    isAnonymous: function(isAnonymous) {
-      if (!isAnonymous) {
+    isAnon: function(isAnon) {
+      if (!isAnon) {
         this.close('signup')
       }
     }
@@ -61,7 +64,7 @@ export default {
     submit() {
       this.$validator.validateAll().then(result => {
         if (!result) return
-        else this.$store.dispatch('signUp', {email: this.email, password: this.password})
+        else this.$store.dispatch('signUp', {username: this.username, email: this.email, password: this.password})
       })
     }
   }

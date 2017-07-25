@@ -2,6 +2,7 @@ Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
     Properties:
+      AliasAttributes: ['email']
       AutoVerifiedAttributes: ['email']
       Policies:
         PasswordPolicy:
