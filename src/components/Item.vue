@@ -15,10 +15,10 @@
               {{item.description}}
             </md-card-content>
             <md-card-content>
-              {{item.keywords.join(', ')}}
+              {{(item.keywords || []).join(', ')}}
             </md-card-content>
             <md-card-content>
-              <media-player :id="item.id" :media="item.media" width="100%" preload="metadata"/>
+              <media-player v-if="item.media" :id="item.id" :media="item.media" width="100%" preload="metadata"/>
             </md-card-content>
           </md-layout>
         </md-layout>
