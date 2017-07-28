@@ -37,7 +37,12 @@ export default {
   watch: {
     isConfirmed: function(isConfirmed) {
       if (isConfirmed === false) {
-        this.$refs.confirmCode.open()
+        // must wait 2 ticks: 1. to update dom 2. to attach dialog
+        this.$nextTick(() => {
+          this.$nextTick(() => {
+            this.$refs.confirmCode.open()
+          })
+        })
       }
     }
   },
