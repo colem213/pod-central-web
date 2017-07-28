@@ -4,17 +4,14 @@
     <md-theme md-name="header">
       <md-whiteframe>
         <md-toolbar>
-          <md-layout>
-            <h1 class="md-title">Pod Central</h1>
-          </md-layout>
-          <md-layout md-align="end">
-            <md-layout md-flex="15">
-              <sign-in/>
+          <md-layout md-row>
+            <md-layout md-vertical-align="center">
+              <h1 class="md-title">Pod Central</h1>
             </md-layout>
-            <md-layout md-flex="15">
-              <sign-up/>
-              <confirm-code/>
-            </md-layout>
+            <confirm-code/>
+            <sign-in/>
+            <sign-out/>
+            <sign-up/>
           </md-layout>
         </md-toolbar>
       </md-whiteframe>
@@ -28,6 +25,7 @@
 <script>
 import SignIn from '@/components/SignIn'
 import SignUp from '@/components/SignUp'
+import SignOut from '@/components/SignOut'
 import ConfirmCode from '@/components/ConfirmCode'
 import Notify from '@/components/Notify'
 
@@ -36,6 +34,7 @@ export default {
   components: {
     SignIn,
     SignUp,
+    SignOut,
     ConfirmCode,
     Notify
   },

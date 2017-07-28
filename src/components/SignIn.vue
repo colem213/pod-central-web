@@ -1,6 +1,6 @@
 <template>
-  <md-layout>
-    <md-dialog @close="reset" md-open-from="#sign-in-form" md-close-to="#sign-in-form" ref="signin">
+  <md-layout md-flex="10" v-if="!isAuth">
+    <md-dialog @close="reset" md-open-from="#sign-in-form" md-close-to="#sign-in-form" ref="signIn">
       <md-dialog-title>Sign In</md-dialog-title>
 
       <md-dialog-content>
@@ -16,15 +16,17 @@
             <span class="md-error">{{errors.first('password')}}</span>
           </md-input-container>
           <md-button type="submit" class="md-raised md-primary">Submit</md-button>
-          <md-button class="md-raised" @click="close('signin')">Cancel</md-button>
+          <md-button class="md-raised" @click="close('signIn')">Cancel</md-button>
         </form>
       </md-dialog-content>
     </md-dialog>
-    <md-button id="sign-in-form" @click="$refs.signin.open()">Sign In</md-button>
+    <md-button id="sign-in-form" @click="$refs.signIn.open()">Sign In</md-button>
   </md-layout>
 </template>
 
 <<script>
+import { mapGetters } from 'vuex'
+
 export default {
   name: 'sign-in',
   $validates: true,
@@ -35,8 +37,18 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['isAuth', 'showSignIn']),
     username() {
       return this.email.replace('@', '_')
+    }
+  },
+  watch: {
+    showSignIn: function(showSignIn) {
+      if (showSignIn) {
+        this.$refs.signIn.open()
+      } else {
+        this.$refs.signIn.close()
+      }
     }
   },
   methods: {

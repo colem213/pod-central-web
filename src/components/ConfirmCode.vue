@@ -1,5 +1,5 @@
 <template>
-  <md-layout>
+  <md-layout md-flex="15" v-if="isConfirmed === false">
     <md-dialog @close="reset" ref="confirmCode">
       <md-dialog-title>Confirm Registration</md-dialog-title>
 
@@ -12,11 +12,11 @@
           </md-input-container>
           <md-button type="submit" class="md-raised md-primary">Submit</md-button>
           <md-button class="md-raised md-accent" @click="resendConfirmCode">Resend Code</md-button>
-          <md-button class="md-raised" @click="close('confirmCode')">Cancel</md-button>
+          <md-button class="md-raised" @click="close()">Cancel</md-button>
         </form>
       </md-dialog-content>
     </md-dialog>
-    <md-button v-if="!isConfirmed" @click="$refs['confirmCode'].open()">Confirm Code</md-button>
+    <md-button @click="$refs.confirmCode.open()">Confirm Code</md-button>
   </md-layout>
 </template>
 
@@ -36,14 +36,14 @@ export default {
   },
   watch: {
     isConfirmed: function(isConfirmed) {
-      if (!isConfirmed) {
-        this.$refs['confirmCode'].open()
+      if (isConfirmed === false) {
+        this.$refs.confirmCode.open()
       }
     }
   },
   methods: {
-    close(ref) {
-      this.$refs[ref].close()
+    close() {
+      this.$refs.confirmCode.close()
       this.reset()
     },
     reset() {

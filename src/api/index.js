@@ -1,5 +1,6 @@
 import AWS from 'aws-sdk'
 import { CognitoUserPool, CognitoUser, CognitoUserAttribute, AuthenticationDetails } from 'amazon-cognito-identity-js'
+import jwtDecode from 'jwt-decode'
 
 let channelTbl = process.env.AWS_DYNDB_CHANNEL_TABLE
 let itemTbl = process.env.AWS_DYNDB_ITEM_TABLE
@@ -17,73 +18,11 @@ let userPool = new CognitoUserPool({
   ClientId: process.env.AWS_COGNITO_CLIENT_ID
 })
 
-function getCurrentUser() {
-  let cognitoUser = userPool.getCurrentUser()
-  let findUser = new Promise((resolve, reject) => {
-    if (cognitoUser) resolve(cognitoUser)
-    else reject(new Error('User is not available'))
-  })
-
-  return findUser.then(cognitoUser => {
-    return new Promise((resolve, reject) => {
-      cognitoUser.getSession(function(err, session) {
-        if (err) reject(err)
-        else resolve(cognitoUser)
-      })
-    })
-  })
-}
-
-function getUserAttributes(user) {
-  let findUser = user ? Promise.resolve(user) : getCurrentUser()
-  return findUser.then(cognitoUser => {
-    return new Promise((resolve, reject) => {
-      cognitoUser.getUserAttributes(function(err, attrs) {
-        if (err) reject(err)
-        else {
-          resolve({
-            cognitoUser,
-            ...attrs.reduce((acc, attr) => {
-              acc[attr.Name] = attr.Value
-              return acc
-            }, {})
-          })
-        }
-      })
-    })
-  })
-}
-
-function getStateFromUser(user) {
-  let findUserAttrs = getUserAttributes(user)
-  return findUserAttrs.then(({cognitoUser, ...attrs}) => {
-    return {
-      user: {
-        username: cognitoUser.getUsername(),
-        email: attrs.email
-      },
-      isConfirmed: !!attrs.email_verified,
-      isAuth: cognitoUser.getSignInUserSession() != null && cognitoUser.getSignInUserSession().isValid(),
-      isAnon: false
-    }
-  }).catch(() => {
-    return Promise.resolve({
-      user: {
-        username: null
-      },
-      isConfirmed: null,
-      isAnon: true,
-      isAuth: false
-    })
-  })
-}
-
 let api = {}
 
 api.getAllChannels = function() {
   return dynDb.scan({ TableName: channelTbl }).promise()
     .then(data => data.Items)
-    .catch(err => console.error(err))
 }
 
 api.getItemsByChannel = function(id) {
@@ -107,22 +46,25 @@ api.getItemsByChannel = function(id) {
 
 api.signUp = function(user) {
   return new Promise((resolve, reject) => {
-    let emailAttr = {
-      Name: 'email',
-      Value: user.email
-    }
-    let attrList = []
-    attrList.push(new CognitoUserAttribute(emailAttr))
-    userPool.signUp(user.username, user.password, attrList, null,
+    let {password, ...attrs} = user
+    let attrList = Object.keys(attrs)
+          .map(key => { return {Name: key, Value: attrs[key]} })
+          .map(attr => new CognitoUserAttribute(attr))
+    userPool.signUp(user.email.replace('@', '_'), password, attrList, null,
       function(err, data) {
         if (err) {
+          switch (err.code) {
+            case 'UsernameExistsException':
+              err.message = `${err.message}. Try signing in to confirm your email.`
+              break
+          }
           reject(err)
         } else {
           resolve({
             user: {
-              username: data.user.getUsername()
+              username: data.user.getUsername(),
+              email_verified: data.userConfirmed
             },
-            isConfirmed: data.userConfirmed,
             isAnon: false
           })
         }
@@ -139,13 +81,19 @@ api.signIn = function(user) {
   return new Promise((resolve, reject) => {
     cognitoUser.authenticateUser(authDetails, {
       onSuccess: function(session) {
-        resolve(getStateFromUser())
+        resolve({
+          isAnon: false,
+          isAuth: session.isValid(),
+          user: {
+            ...jwtDecode(session.getIdToken().getJwtToken())
+          }
+        })
       },
       onFailure: function(err) {
         let auth = { message: err.message }
         switch (err.code) {
           case 'UserNotConfirmedException':
-            auth.state = { user: { username: user.username }, isConfirmed: false }
+            auth.state = { user: { username: user.username, email_verified: false } }
             break
         }
         reject(auth)
@@ -154,7 +102,17 @@ api.signIn = function(user) {
   })
 }
 
+api.signOut = function() {
+  try {
+    userPool.getCurrentUser().signOut()
+    return Promise.resolve()
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 api.confirmCode = function(form) {
+  if (!form.username) return Promise.reject(new Error('Must sign up first'))
   let cognitoUser = new CognitoUser({
     Username: form.username,
     Pool: userPool
@@ -164,13 +122,14 @@ api.confirmCode = function(form) {
       true, // @param {bool} forceAliasCreation Allow migrating from an existing email / phone number. https://github.com/aws/amazon-cognito-identity-js/blob/36ea6c46002fab2cb84fa3b5496d477699ac2ae9/src/CognitoUser.js#L457
       function(err) {
         if (err) reject(err)
-        else resolve(true)
+        else resolve()
       }
     )
   })
 }
 
 api.resendConfirmCode = function(username) {
+  if (!username) return Promise.reject(new Error('Must sign up first'))
   let cognitoUser = new CognitoUser({
     Username: username,
     Pool: userPool
@@ -178,13 +137,29 @@ api.resendConfirmCode = function(username) {
   return new Promise((resolve, reject) => {
     cognitoUser.resendConfirmationCode(function(err, data) {
       if (err) reject(err)
-      else resolve(true)
+      else resolve()
     })
   })
 }
 
 api.getCurrentUser = function() {
-  return getStateFromUser()
+  let cognitoUser = userPool.getCurrentUser()
+  let findUser = cognitoUser === null ? Promise.resolve({})
+      : new Promise((resolve, reject) => {
+        cognitoUser.getSession((err, session) => {
+          if (err) reject(err)
+          else {
+            resolve({
+              isAnon: false,
+              isAuth: session.isValid(),
+              user: {
+                ...jwtDecode(session.getIdToken().getJwtToken())
+              }
+            })
+          }
+        })
+      })
+  return findUser
 }
 
 export default api

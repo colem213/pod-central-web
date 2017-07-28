@@ -11,6 +11,15 @@ Resources:
           RequireNumbers: false
           RequireSymbols: false
           RequireUppercase: false
+      Schema:
+        - {
+          Name: email,
+          Required: true
+        }
+        - {
+          Name: given_name,
+          Required: true
+        }
   WebUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:

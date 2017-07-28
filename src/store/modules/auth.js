@@ -5,20 +5,24 @@ import * as types from '@/store/mutation-types'
 const state = {
   auth: {
     user: {
-      username: null
+      username: '',
+      email: '',
+      email_verified: null
     },
-    isConfirmed: null,
     isAnon: true,
-    isAuth: false
+    isAuth: false,
+    showSignIn: false
   }
 }
+const initState = JSON.parse(JSON.stringify(state))
 
 // getters
 const getters = {
   user: state => state.auth.user,
   isAnon: state => state.auth.isAnon,
-  isConfirmed: state => state.auth.isConfirmed,
-  isAuth: state => state.auth.isAuth
+  isConfirmed: state => state.auth.user.email_verified,
+  isAuth: state => state.auth.isAuth,
+  showSignIn: state => state.auth.showSignIn
 }
 
 // actions
@@ -26,33 +30,47 @@ const actions = {
   signUp({ commit, dispatch }, form) {
     api.signUp(form).then(auth => {
       commit(types.RECEIVE_AUTH, auth)
+    }).catch(err => {
+      commit(types.UPDATE_MESSAGE, { type: 'error', text: err.message })
     })
   },
   signIn({ commit }, form) {
     api.signIn(form).then(auth => {
-      commit(types.RECEIVE_AUTH, auth)
+      commit(types.RECEIVE_AUTH, { showSignIn: false, ...auth })
+      commit(types.UPDATE_MESSAGE, { type: 'success', text: `Welcome, ${auth.user.given_name}!` })
     }).catch(err => {
       commit(types.UPDATE_MESSAGE, { type: 'error', text: err.message })
-      commit(types.RECEIVE_AUTH, err.state)
+      if (err.state) {
+        commit(types.RECEIVE_AUTH, err.state)
+      }
+    })
+  },
+  signOut({ commit }) {
+    api.signOut().then(() => {
+      commit(types.RECEIVE_AUTH, initState.auth)
+      commit(types.UPDATE_MESSAGE, { type: 'success', text: 'You\'ve logged out!' })
+    }).catch(() => {
+      commit(types.UPDATE_MESSAGE, { type: 'error', text: 'There was a problem logging you out' })
     })
   },
   getCurrentUser({ commit }) {
-    api.getCurrentUser().then(user => {
-      console.log(JSON.stringify(user))
-      commit(types.RECEIVE_AUTH, user)
-    }).catch(err => {
-      console.log(JSON.stringify(err))
+    api.getCurrentUser().then(auth => {
+      commit(types.RECEIVE_AUTH, auth)
     })
   },
   confirmCode({ commit }, code) {
-    api.confirmCode(code).then(confirmed => {
-      commit(types.RECEIVE_AUTH, { isConfirmed: confirmed })
+    api.confirmCode(code).then(() => {
+      commit(types.UPDATE_MESSAGE, { type: 'success', text: 'Successfully confirmed!' })
+      commit(types.RECEIVE_AUTH, { isConfirmed: true, showSignIn: true })
+    }).catch(err => {
+      commit(types.UPDATE_MESSAGE, { type: 'error', text: err.message })
     })
   },
   resendConfirmCode({ commit }, email) {
     api.resendConfirmCode(email).then(result => {
-      commit(types.UPDATE_MESSAGE, { type: 'success', text: 'Confirmation Code Resent' })
-      commit(types.RECEIVE_AUTH, { isConfirmed: false })
+      commit(types.UPDATE_MESSAGE, { type: 'success', text: 'Confirmation Code Re-sent' })
+    }).catch(err => {
+      commit(types.UPDATE_MESSAGE, { type: 'error', text: err.message })
     })
   }
 }

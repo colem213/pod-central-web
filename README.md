@@ -4,6 +4,7 @@
 
 ## Environment Variables
 
+```
 NODE_ENV=development
 AWS_DYNDB_URL=http://localhost:10500
 AWS_DYNDB_CHANNEL_TABLE=Channel
@@ -11,6 +12,7 @@ AWS_DYNDB_ITEM_TABLE=Item
 AWS_REGION=us-east-2
 AWS_COGNITO_USER_POOL_ID
 AWS_COGNITO_CLIENT_ID
+```
 
 ## Build Setup
 
