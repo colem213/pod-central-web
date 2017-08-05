@@ -4,7 +4,7 @@
       <md-dialog-title>Sign In</md-dialog-title>
 
       <md-dialog-content>
-        <form @submit.stop.prevent="submit">
+        <form @submit.stop.prevent="submit" ref="form">
           <md-input-container :class="{'md-input-invalid': errors.has('email')}">
             <label>Email</label>
             <md-input data-vv-name="email" type="email" v-model="email" v-validate data-vv-rules="required|email" data-vv-delay="500" required/>
@@ -16,7 +16,7 @@
             <span class="md-error">{{errors.first('password')}}</span>
           </md-input-container>
           <md-button type="submit" class="md-raised md-primary">Submit</md-button>
-          <md-button class="md-raised" @click="close('signIn')">Cancel</md-button>
+          <md-button class="md-raised" @click="close()">Cancel</md-button>
         </form>
       </md-dialog-content>
     </md-dialog>
@@ -52,12 +52,11 @@ export default {
     }
   },
   methods: {
-    close(ref) {
-      this.$refs[ref].close()
-      this.reset()
-    },
     reset: function() {
-      this.errors.clear()
+      this.$refs.form.reset()
+      this.$nextTick(() => {
+        this.errors.clear()
+      })
     },
     submit: function() {
       this.$validator.validateAll().then(result => {
