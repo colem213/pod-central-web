@@ -29,16 +29,17 @@ const getters = {
 
 // actions
 const actions = {
-  signUp({ commit, dispatch }, form) {
+  signUp({ commit }, form) {
     api.signUp(form).then(auth => {
       commit(types.RECEIVE_AUTH, auth)
     }).catch(err => {
       commit(types.UPDATE_MESSAGE, { type: 'error', text: err.message })
     })
   },
-  signIn({ commit }, form) {
+  signIn({ commit, dispatch }, form) {
     api.signIn(form).then(auth => {
       commit(types.RECEIVE_AUTH, { showSignIn: false, ...auth })
+      dispatch('getAllChannels', null, { root: true })
       commit(types.UPDATE_MESSAGE, { type: 'success', text: `Welcome, ${auth.user.given_name}!` })
     }).catch(err => {
       commit(types.UPDATE_MESSAGE, { type: 'error', text: err.message })
@@ -50,6 +51,8 @@ const actions = {
   signOut({ commit }) {
     api.signOut().then(() => {
       commit(types.RECEIVE_AUTH, { ...initialState })
+      commit(types.ERASE_CHANNELS, null, { root: true })
+      commit(types.ERASE_ITEMS, null, { root: true })
       commit(types.UPDATE_MESSAGE, { type: 'success', text: 'You\'ve logged out!' })
     }).catch(() => {
       commit(types.UPDATE_MESSAGE, { type: 'error', text: 'There was a problem logging you out' })

@@ -30,6 +30,9 @@ const mutations = {
         return acc
       }, {})
     }
+  },
+  [types.ERASE_CHANNELS](state) {
+    state.channels = {}
   }
 }
 

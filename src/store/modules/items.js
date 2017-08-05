@@ -33,6 +33,9 @@ const mutations = {
         return acc
       }, {})
     }
+  },
+  [types.ERASE_ITEMS](state) {
+    state.items = {}
   }
 }
 
