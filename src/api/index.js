@@ -1,6 +1,7 @@
 import AWS from 'aws-sdk'
 import { CognitoUserPool, CognitoUser, CognitoUserAttribute, AuthenticationDetails } from 'amazon-cognito-identity-js'
 import jwtDecode from 'jwt-decode'
+import axios from 'axios'
 
 let channelTbl = process.env.AWS_DYNDB_CHANNEL_TABLE
 let itemTbl = process.env.AWS_DYNDB_ITEM_TABLE
@@ -33,6 +34,17 @@ let findSession = function() {
 let findUser = function() {
   return findSession().then(session => {
     return {...jwtDecode(session.getIdToken().getJwtToken())}
+  })
+}
+
+let http = axios.create({
+  baseURL: 'http://localhost:9090'
+})
+http.defaults.headers.post['Content-Type'] = 'application/json'
+
+let findHeaders = function() {
+  return findSession().then(session => {
+    return { 'Authorization': `Bearer ${session.getIdToken().getJwtToken()}` }
   })
 }
 
@@ -191,6 +203,15 @@ api.getCurrentUser = function() {
     }
   }).catch(() => {
     return {}
+  })
+}
+
+api.subscribe = function(feedUrl) {
+  return findHeaders().then(headers => {
+    return http.post('/subscribe', JSON.stringify({feedUrl}), {headers})
+  }).then(({ data }) => {
+    let { items, ...channel } = data
+    return { items, channel }
   })
 }
 

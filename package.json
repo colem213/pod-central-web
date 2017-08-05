@@ -17,6 +17,7 @@
   "dependencies": {
     "amazon-cognito-identity-js": "^1.19.0",
     "aws-sdk": "^2.82.0",
+    "axios": "^0.16.2",
     "jwt-decode": "^2.2.0",
     "mediaelement": "^4.2.2",
     "vee-validate": "^2.0.0-rc.7",
