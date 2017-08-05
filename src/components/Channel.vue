@@ -7,7 +7,7 @@
           </md-card-media>
           <md-layout md-column>
             <md-card-header>
-              <router-link :to="{name: 'ItemList', params: {channelId: channel.id}}"><div class="md-title">{{channel.title}}</div></router-link>
+              <router-link :to="{name: 'ItemList', params: {id: channel.id}}"><div class="md-title">{{channel.title}}</div></router-link>
               <div class="md-subhead">{{channel.category}}</div>
             </md-card-header>
 
