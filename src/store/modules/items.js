@@ -3,12 +3,15 @@ import * as types from '@/store/mutation-types'
 
 // initial state
 const state = {
-  all: []
+  items: {}
 }
 
 // getters
 const getters = {
-  items: state => state.all
+  allItems: state => { return Object.keys(state.items).map(key => state.items[key]) },
+  item: state => (id) => {
+    return state.items[id]
+  }
 }
 
 // actions
@@ -23,7 +26,13 @@ const actions = {
 // mutations
 const mutations = {
   [types.RECEIVE_ITEMS](state, { items }) {
-    state.all = items
+    state.items = {
+      ...state.items,
+      ...items.reduce((acc, ch) => {
+        acc[ch.id] = ch
+        return acc
+      }, {})
+    }
   }
 }
 

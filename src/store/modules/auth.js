@@ -2,19 +2,21 @@ import api from '@/api'
 import * as types from '@/store/mutation-types'
 
 // initial state
+const initialState = {
+  user: {
+    username: '',
+    email: '',
+    email_verified: null
+  },
+  isAnon: true,
+  isAuth: false,
+  showSignIn: false
+}
 const state = {
   auth: {
-    user: {
-      username: '',
-      email: '',
-      email_verified: null
-    },
-    isAnon: true,
-    isAuth: false,
-    showSignIn: false
+    ...initialState
   }
 }
-const initState = JSON.parse(JSON.stringify(state))
 
 // getters
 const getters = {
@@ -47,7 +49,7 @@ const actions = {
   },
   signOut({ commit }) {
     api.signOut().then(() => {
-      commit(types.RECEIVE_AUTH, initState.auth)
+      commit(types.RECEIVE_AUTH, { ...initialState })
       commit(types.UPDATE_MESSAGE, { type: 'success', text: 'You\'ve logged out!' })
     }).catch(() => {
       commit(types.UPDATE_MESSAGE, { type: 'error', text: 'There was a problem logging you out' })

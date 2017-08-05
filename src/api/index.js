@@ -4,6 +4,7 @@ import jwtDecode from 'jwt-decode'
 
 let channelTbl = process.env.AWS_DYNDB_CHANNEL_TABLE
 let itemTbl = process.env.AWS_DYNDB_ITEM_TABLE
+let subTbl = process.env.AWS_DYNDB_SUBSCRIPTION_TABLE
 let config = { region: process.env.AWS_REGION, endpoint: process.env.AWS_DYNDB_URL }
 
 if (process.env.NODE_ENV !== 'production') {
@@ -18,17 +19,52 @@ let userPool = new CognitoUserPool({
   ClientId: process.env.AWS_COGNITO_CLIENT_ID
 })
 
+let findSession = function() {
+  let cognitoUser = userPool.getCurrentUser()
+  return cognitoUser === null ? Promise.reject()
+    : new Promise((resolve, reject) => {
+      cognitoUser.getSession((err, session) => {
+        if (err) reject(err)
+        else resolve(session)
+      })
+    })
+}
+
+let findUser = findSession().then(session => {
+  return {...jwtDecode(session.getIdToken().getJwtToken())}
+})
+
 let api = {}
 
 api.getAllChannels = function() {
-  return dynDb.scan({ TableName: channelTbl }).promise()
-    .then(data => data.Items)
+  return findUser.then(user => {
+    return dynDb.query({
+      TableName: subTbl,
+      KeyConditionExpression: '#userId = :id',
+      ExpressionAttributeNames: {
+        '#userId': 'userId'
+      },
+      ExpressionAttributeValues: {
+        ':id': user.sub
+      }
+    }).promise()
+  }).then(({ Items }) => {
+    if (Items.length === 0) return Items
+    let params = {
+      RequestItems: {
+        [channelTbl]: {
+          Keys: Items.map(sub => { return { id: sub.channelId } })
+        }
+      }
+    }
+    return dynDb.batchGet(params).promise()
+  }).then(data => data.Responses[channelTbl])
 }
 
 api.getItemsByChannel = function(id) {
   return dynDb.query({
     TableName: itemTbl,
-    IndexName: 'itemsByChannel',
+    IndexName: 'ChannelIndex',
     KeyConditionExpression: '#chId = :id',
     ExpressionAttributeNames: {
       '#chId': 'channelId'
@@ -143,23 +179,17 @@ api.resendConfirmCode = function(username) {
 }
 
 api.getCurrentUser = function() {
-  let cognitoUser = userPool.getCurrentUser()
-  let findUser = cognitoUser === null ? Promise.resolve({})
-      : new Promise((resolve, reject) => {
-        cognitoUser.getSession((err, session) => {
-          if (err) reject(err)
-          else {
-            resolve({
-              isAnon: false,
-              isAuth: session.isValid(),
-              user: {
-                ...jwtDecode(session.getIdToken().getJwtToken())
-              }
-            })
-          }
-        })
-      })
-  return findUser
+  return findSession().then(session => {
+    return {
+      isAnon: false,
+      isAuth: session.isValid(),
+      user: {
+        ...jwtDecode(session.getIdToken().getJwtToken())
+      }
+    }
+  }).catch(() => {
+    return {}
+  })
 }
 
 export default api

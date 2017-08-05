@@ -1,6 +1,6 @@
 <template>
   <md-layout md-column>
-    <item :item="item" v-for="item in items" :key="item.id" />
+    <item :item="item" v-for="item in allItems" :key="item.id" />
   </md-layout>
 </template>
 
@@ -11,7 +11,7 @@ import Item from '@/components/Item'
 export default {
   name: 'item-list',
   computed: {
-    ...mapGetters(['items'])
+    ...mapGetters(['allItems'])
   },
   beforeMount() {
     this.$store.dispatch('getItemsByChannel', this.$route.params.channelId)
