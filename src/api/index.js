@@ -30,14 +30,16 @@ let findSession = function() {
     })
 }
 
-let findUser = findSession().then(session => {
-  return {...jwtDecode(session.getIdToken().getJwtToken())}
-})
+let findUser = function() {
+  return findSession().then(session => {
+    return {...jwtDecode(session.getIdToken().getJwtToken())}
+  })
+}
 
 let api = {}
 
 api.getAllChannels = function() {
-  return findUser.then(user => {
+  return findUser().then(user => {
     return dynDb.query({
       TableName: subTbl,
       KeyConditionExpression: '#userId = :id',
@@ -108,10 +110,10 @@ api.signUp = function(user) {
   })
 }
 
-api.signIn = function(user) {
-  let authDetails = new AuthenticationDetails({ Password: user.password })
+api.signIn = function({username, password}) {
+  let authDetails = new AuthenticationDetails({ Password: password })
   let cognitoUser = new CognitoUser({
-    Username: user.username,
+    Username: username,
     Pool: userPool
   })
   return new Promise((resolve, reject) => {
@@ -125,11 +127,11 @@ api.signIn = function(user) {
           }
         })
       },
-      onFailure: function(err) {
-        let auth = { message: err.message }
-        switch (err.code) {
+      onFailure: function({code, message}) {
+        let auth = { message }
+        switch (code) {
           case 'UserNotConfirmedException':
-            auth.state = { user: { username: user.username, email_verified: false } }
+            auth.state = { user: { username, email_verified: false } }
             break
         }
         reject(auth)
