@@ -13,8 +13,9 @@ export default new Router({
       component: ChannelList
     },
     {
-      path: '/:channelId',
+      path: '/:id',
       name: 'ItemList',
+      props: true,
       component: ItemList
     }
   ]

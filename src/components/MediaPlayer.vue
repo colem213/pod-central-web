@@ -15,18 +15,22 @@ export default {
   props: ['id', 'media'],
   computed: {
     audio: function() {
-      return this.media.filter(media => media.medium === 'audio')
+      return this.media.filter(media => { return media.medium === 'audio' || media.type.startsWith('audio/') })
     }
   },
   mounted() {
-    /* eslint-disable no-new */
-    this.player = new MediaElementPlayer(this.id)
+    if (this.audio) {
+      /* eslint-disable no-new */
+      this.player = new MediaElementPlayer(this.id)
+    }
   },
   beforeDestroy() {
-    if (!this.player.paused) {
-      this.player.pause()
+    if (this.player) {
+      if (!this.player.paused) {
+        this.player.pause()
+      }
+      this.player.remove()
     }
-    this.player.remove()
   }
 }
 </script>

@@ -27,11 +27,18 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import MediaPlayer from '@/components/MediaPlayer'
 
 export default {
   name: 'item',
-  props: ['item'],
+  props: ['id'],
+  computed: {
+    ...mapGetters(['getItem']),
+    item() {
+      return this.getItem(this.id)
+    }
+  },
   components: {
     MediaPlayer
   }

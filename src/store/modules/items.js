@@ -9,7 +9,7 @@ const state = {
 // getters
 const getters = {
   allItems: state => { return Object.keys(state.items).map(key => state.items[key]) },
-  item: state => (id) => {
+  getItem: state => (id) => {
     return state.items[id]
   }
 }
