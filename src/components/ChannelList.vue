@@ -1,6 +1,5 @@
 <template>
   <md-layout md-column>
-    <h1>Your Podcasts</h1>
     <channel :channel="ch" v-for="ch in channels" :key="ch.id" />
   </md-layout>
 </template>

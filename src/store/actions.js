@@ -5,5 +5,7 @@ export const subscribe = ({ commit }, feedUrl) => {
   api.subscribe(feedUrl).then(({items, channel}) => {
     commit(types.RECEIVE_ITEMS, { items })
     commit(types.RECEIVE_CHANNELS, { channels: [channel] })
-  }).catch(() => {})
+  }).catch(err => {
+    commit(types.UPDATE_MESSAGE, { type: 'error', text: err.message })
+  })
 }
