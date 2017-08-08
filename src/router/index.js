@@ -1,16 +1,17 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Home from '@/components/Home'
+import HomePage from '@/components/HomePage'
 import ItemList from '@/components/ItemList'
 
 Vue.use(Router)
 
 export default new Router({
+  mode: process.env.NODE_ENV === 'production' ? 'history' : 'hash',
   routes: [
     {
       path: '/',
       name: 'Home',
-      component: Home
+      component: HomePage
     },
     {
       path: '/:id',
