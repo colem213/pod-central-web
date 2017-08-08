@@ -1,7 +1,7 @@
 <template>
   <md-layout md-flex="15" v-if="isConfirmed === false">
     <md-dialog @close="reset" ref="confirmCode">
-      <md-dialog-title>Confirm Registration</md-dialog-title>
+      <md-dialog-title>Confirm Email</md-dialog-title>
 
       <md-dialog-content>
         <form @submit.stop.prevent="submit">

@@ -143,7 +143,7 @@ api.signIn = function({username, password}) {
         let auth = { message }
         switch (code) {
           case 'UserNotConfirmedException':
-            auth.state = { user: { username, email_verified: false } }
+            auth.state = { isAnon: false, user: { username, email_verified: false } }
             break
         }
         reject(auth)

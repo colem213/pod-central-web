@@ -16,7 +16,7 @@
             <span class="md-error">{{errors.first('password')}}</span>
           </md-input-container>
           <md-button type="submit" class="md-raised md-primary">Submit</md-button>
-          <md-button class="md-raised" @click="close()">Cancel</md-button>
+          <md-button class="md-raised" @click="$refs.signIn.close()">Cancel</md-button>
         </form>
       </md-dialog-content>
     </md-dialog>
