@@ -58,9 +58,12 @@ const actions = {
       commit(types.UPDATE_MESSAGE, { type: 'error', text: 'There was a problem logging you out' })
     })
   },
-  getCurrentUser({ commit }) {
+  getCurrentUser({ commit, dispatch }) {
     api.getCurrentUser().then(auth => {
       commit(types.RECEIVE_AUTH, auth)
+      if (auth.isAuth) {
+        dispatch('getAllChannels', null, { root: true })
+      }
     })
   },
   confirmCode({ commit }, code) {
