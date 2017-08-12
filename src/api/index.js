@@ -75,7 +75,7 @@ api.getAllChannels = function() {
   }).then(data => data.Responses[channelTbl])
 }
 
-api.getItemsByChannel = function(id, lastKey) {
+api.getItemsByChannel = function({channelId, sortAsc, lastKey}) {
   let params = {
     TableName: itemTbl,
     IndexName: 'ChannelIndex',
@@ -84,10 +84,10 @@ api.getItemsByChannel = function(id, lastKey) {
       '#chId': 'channelId'
     },
     ExpressionAttributeValues: {
-      ':id': id
+      ':id': channelId
     },
     Select: 'ALL_ATTRIBUTES',
-    ScanIndexForward: true,
+    ScanIndexForward: sortAsc,
     Limit: 10
   }
   if (lastKey) {
@@ -96,7 +96,7 @@ api.getItemsByChannel = function(id, lastKey) {
   return dynDb.query(params).promise()
     .then(data => {
       let results = {
-        channelId: id,
+        channelId,
         items: data.Items
       }
       if (data.LastEvaluatedKey) {

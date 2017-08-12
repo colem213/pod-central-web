@@ -1,4 +1,5 @@
 import api from '@/api'
+import Vue from 'vue'
 import * as types from '@/store/mutation-types'
 
 // initial state
@@ -6,6 +7,7 @@ const state = {
   items: {},
   itemsByChannel: {},
   lastKeyByChannel: {},
+  sortAscByChannel: {},
   loading: false
 }
 
@@ -14,19 +16,28 @@ const getters = {
   getItems: state => channelId => state.itemsByChannel[channelId],
   getItem: state => id => state.items[id],
   areItemsLoading: state => state.loading,
-  areAllItemsLoaded: state => channelId => state.lastKeyByChannel[channelId] === true
+  areAllItemsLoaded: state => channelId => state.lastKeyByChannel[channelId] === true,
+  getSortAsc: state => channelId => state.sortAscByChannel[channelId] !== false
 }
 
 // actions
 const actions = {
-  getItemsByChannel({ commit, state, getters }, id) {
-    if (getters.areAllItemsLoaded(id)) return
+  getItemsByChannel({ commit, state, getters }, channelId) {
+    if (getters.areAllItemsLoaded(channelId)) return
     commit(types.REQUEST_ITEMS)
-    api.getItemsByChannel(id, state.lastKeyByChannel[id]).then(rsp => {
+    api.getItemsByChannel({
+      channelId,
+      sortAsc: getters.getSortAsc(channelId),
+      lastKey: state.lastKeyByChannel[channelId]
+    }).then(rsp => {
       commit(types.RECEIVE_ITEMS, { lastKey: true, ...rsp })
     }).catch(err => {
       commit(types.UPDATE_MESSAGE, {type: 'error', text: err.message})
     })
+  },
+  itemsToggleSort({ commit, dispatch, getters }, channelId) {
+    commit(types.ITEMS_TOGGLE_SORT, {channelId, sortAsc: getters.getSortAsc(channelId)})
+    dispatch('getItemsByChannel', channelId)
   }
 }
 
@@ -46,8 +57,13 @@ const mutations = {
     }
     let channelItems = state.itemsByChannel[channelId] || []
     channelItems.push.apply(channelItems, items.map(item => item.id))
-    state.itemsByChannel[channelId] = channelItems
-    state.lastKeyByChannel[channelId] = lastKey
+    Vue.set(state.itemsByChannel, channelId, channelItems)
+    Vue.set(state.lastKeyByChannel, channelId, lastKey)
+  },
+  [types.ITEMS_TOGGLE_SORT](state, {channelId, sortAsc}) {
+    Vue.set(state.sortAscByChannel, channelId, !sortAsc)
+    delete state.itemsByChannel[channelId]
+    delete state.lastKeyByChannel[channelId]
   },
   [types.ERASE_ITEMS](state) {
     state.items = {}
