@@ -6,7 +6,9 @@
         <md-toolbar>
           <md-layout md-row>
             <md-layout md-vertical-align="center">
-              <h1 class="md-title">Pod Central</h1>
+              <router-link :to="{name: 'Home'}">
+                <h1 class="md-title">Pod Central</h1>
+              </router-link>
             </md-layout>
             <confirm-code/>
             <sign-in/>
