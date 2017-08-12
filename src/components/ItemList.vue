@@ -1,6 +1,8 @@
 <template>
   <md-layout md-column>
-    <item :id="item.id" v-for="item in allItems" :key="item.id" />
+    <md-layout md-column v-infinite-scroll="loadItems" :infinite-scroll-disabled="areItemsLoading">
+      <item :id="itemId" v-for="itemId in getItems(id)" :key="itemId" />
+    </md-layout>
   </md-layout>
 </template>
 
@@ -12,10 +14,12 @@ export default {
   name: 'item-list',
   props: ['id'],
   computed: {
-    ...mapGetters(['allItems'])
+    ...mapGetters(['getItems', 'areItemsLoading'])
   },
-  beforeMount() {
-    this.$store.dispatch('getItemsByChannel', this.id)
+  methods: {
+    loadItems() {
+      this.$store.dispatch('getItemsByChannel', this.id)
+    }
   },
   components: {
     Item

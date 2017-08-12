@@ -75,8 +75,8 @@ api.getAllChannels = function() {
   }).then(data => data.Responses[channelTbl])
 }
 
-api.getItemsByChannel = function(id) {
-  return dynDb.query({
+api.getItemsByChannel = function(id, lastKey) {
+  let params = {
     TableName: itemTbl,
     IndexName: 'ChannelIndex',
     KeyConditionExpression: '#chId = :id',
@@ -89,9 +89,21 @@ api.getItemsByChannel = function(id) {
     Select: 'ALL_ATTRIBUTES',
     ScanIndexForward: true,
     Limit: 10
-  }).promise()
-    .then(data => data.Items)
-    .catch(err => console.error(err))
+  }
+  if (lastKey) {
+    params.ExclusiveStartKey = lastKey
+  }
+  return dynDb.query(params).promise()
+    .then(data => {
+      let results = {
+        channelId: id,
+        items: data.Items
+      }
+      if (data.LastEvaluatedKey) {
+        results.lastKey = data.LastEvaluatedKey
+      }
+      return results
+    })
 }
 
 api.signUp = function(user) {
