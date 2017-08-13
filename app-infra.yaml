@@ -1,0 +1,159 @@
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AliasAttributes: ['email']
+      AutoVerifiedAttributes: ['email']
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 6
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+          RequireUppercase: false
+      Schema:
+        - Name: email
+          Required: true
+        - Name: given_name
+          Required: true
+  WebUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      GenerateSecret: false
+      UserPoolId: !Ref UserPool
+  IdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId: !Ref WebUserPoolClient
+          ProviderName: !GetAtt UserPool.ProviderName
+  AuthWebRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: 'sts:AssumeRoleWithWebIdentity'
+            Condition:
+              StringEquals:
+                'cognito-identity.amazonaws.com:aud': !Ref IdentityPool
+              'ForAnyValue:StringLike':
+                'cognito-identity.amazonaws.com:amr': 'authenticated'
+      Policies:
+        - PolicyName: AuthWebSubscriptionQueryAllIndexes
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: SubscriptionQueryAllIndexes
+                Effect: Allow
+                Action:
+                  - 'dynamodb:Query'
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}/index/*
+                Condition:
+                  'ForAllValues:StringEquals':
+                    'dynamodb:LeadingKeys':
+                      - ${cognito-identity.amazonaws.com:sub}
+        - PolicyName: AuthWebChannelQueryChannel
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ChannelQueryChannel
+                Effect: Allow
+                Action:
+                  - 'dynamodb:Query'
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ChannelTable}
+        - PolicyName: AuthWebItemQueryChannelIndex
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ItemQueryChannelIndex
+                Effect: Allow
+                Action:
+                  - 'dynamodb:Query'
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ItemTable}/index/ChannelIndex
+  IdentityPoolRoles:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref IdentityPool
+      Roles:
+        authenticated: !GetAtt AuthWebRole.Arn
+  ChannelTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  ItemTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: channelId
+          AttributeType: S
+        - AttributeName: pubDate
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: ChannelIndex
+          KeySchema:
+            - AttributeName: channelId
+              KeyType: HASH
+            - AttributeName: pubDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  SubscriptionTable:
+    Type: AWS::DynamoDB::Table
+    DependsOn: ItemTable
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: channelId
+          AttributeType: S
+        - AttributeName: subDate
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: channelId
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: SubDateIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: subDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: KEYS_ONLY
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+Outputs:
+  userPoolId:
+    Description: User Pool ID
+    Value: !Ref UserPool
+  clientId:
+    Description: User Pool Web Client ID
+    Value: !Ref WebUserPoolClient

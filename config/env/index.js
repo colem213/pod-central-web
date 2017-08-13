@@ -9,7 +9,7 @@ let cf = new AWS.CloudFormation()
 
 let params = {
   StackName: os.hostname(),
-  TemplateBody: fs.readFileSync('./config/env/app-infra.yaml', {encoding: 'utf-8'})
+  TemplateBody: fs.readFileSync('./app-infra.yaml', {encoding: 'utf-8'})
 }
 
 let createStack = new Promise((resolve, reject) => {
