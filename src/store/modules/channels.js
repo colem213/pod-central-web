@@ -17,6 +17,11 @@ const actions = {
     api.getAllChannels().then(channels => {
       commit(types.RECEIVE_CHANNELS, { channels })
     }).catch(() => {})
+  },
+  getChannel({ commit }, channelId) {
+    api.getChannel(channelId).then(channel => {
+      commit(types.RECEIVE_CHANNELS, { channels: [channel] })
+    })
   }
 }
 

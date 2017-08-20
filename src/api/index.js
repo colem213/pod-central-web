@@ -2,23 +2,45 @@ import AWS from 'aws-sdk'
 import { CognitoUserPool, CognitoUser, CognitoUserAttribute, AuthenticationDetails } from 'amazon-cognito-identity-js'
 import jwtDecode from 'jwt-decode'
 import axios from 'axios'
+import aws4 from 'aws4'
 
+let awsRegion = process.env.AWS_REGION
+
+AWS.config.region = awsRegion
+
+let userPoolId = process.env.AWS_COGNITO_USER_POOL_ID
+let awsDynDbEndpoint = `https://dynamodb.${awsRegion}.amazonaws.com`
 let channelTbl = process.env.AWS_DYNDB_CHANNEL_TABLE
 let itemTbl = process.env.AWS_DYNDB_ITEM_TABLE
 let subTbl = process.env.AWS_DYNDB_SUBSCRIPTION_TABLE
-let config = { region: process.env.AWS_REGION, endpoint: process.env.AWS_DYNDB_URL }
+let apiHost = process.env.AWS_API_HOST
+let apiStage = process.env.AWS_API_STAGE
+let apiScheme = process.env.NODE_ENV === 'production' || apiHost !== 'localhost'
+  ? 'https' : 'http'
 
-if (process.env.NODE_ENV !== 'production') {
-  config.accessKeyId = 'key'
-  config.secretAccessKey = 'secret'
-}
+let endpoint = process.env.NODE_ENV === 'production'
+  ? awsDynDbEndpoint : process.env.AWS_DYNDB_URL || awsDynDbEndpoint
+let identityPoolId = process.env.AWS_COGNITO_IDENTITY_POOL_ID
 
-let dynDb = new AWS.DynamoDB.DocumentClient(config)
+let dynDb
 
 let userPool = new CognitoUserPool({
-  UserPoolId: process.env.AWS_COGNITO_USER_POOL_ID,
+  UserPoolId: userPoolId,
   ClientId: process.env.AWS_COGNITO_CLIENT_ID
 })
+
+let findCredentials = function() {
+  return findSession().then(session => {
+    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+      IdentityPoolId: identityPoolId,
+      Logins: {
+        [`cognito-idp.${awsRegion}.amazonaws.com/${userPoolId}`]: session.getIdToken().getJwtToken()
+      }
+    })
+    dynDb = new AWS.DynamoDB.DocumentClient({endpoint})
+    return AWS.config.credentials.getPromise().then(() => AWS.config.credentials)
+  })
+}
 
 let findSession = function() {
   let cognitoUser = userPool.getCurrentUser()
@@ -26,32 +48,17 @@ let findSession = function() {
     : new Promise((resolve, reject) => {
       cognitoUser.getSession((err, session) => {
         if (err) reject(err)
-        else resolve(session)
+        else {
+          resolve(session)
+        }
       })
     })
-}
-
-let findUser = function() {
-  return findSession().then(session => {
-    return {...jwtDecode(session.getIdToken().getJwtToken())}
-  })
-}
-
-let http = axios.create({
-  baseURL: 'http://localhost:9090'
-})
-http.defaults.headers.post['Content-Type'] = 'application/json'
-
-let findHeaders = function() {
-  return findSession().then(session => {
-    return { 'Authorization': `Bearer ${session.getIdToken().getJwtToken()}` }
-  })
 }
 
 let api = {}
 
 api.getAllChannels = function() {
-  return findUser().then(user => {
+  return findCredentials().then(({identityId}) => {
     return dynDb.query({
       TableName: subTbl,
       KeyConditionExpression: '#userId = :id',
@@ -59,7 +66,7 @@ api.getAllChannels = function() {
         '#userId': 'userId'
       },
       ExpressionAttributeValues: {
-        ':id': user.sub
+        ':id': identityId
       }
     }).promise()
   }).then(({ Items }) => {
@@ -72,38 +79,52 @@ api.getAllChannels = function() {
       }
     }
     return dynDb.batchGet(params).promise()
-  }).then(data => data.Responses[channelTbl])
+      .then(data => data.Responses[channelTbl])
+  })
+}
+
+api.getChannel = function(channelId) {
+  return findCredentials().then(() => {
+    return dynDb.get({
+      TableName: channelTbl,
+      Key: {
+        id: channelId
+      }
+    }).promise()
+  }).then(({Item}) => Item)
 }
 
 api.getItemsByChannel = function({channelId, sortAsc, lastKey}) {
-  let params = {
-    TableName: itemTbl,
-    IndexName: 'ChannelIndex',
-    KeyConditionExpression: '#chId = :id',
-    ExpressionAttributeNames: {
-      '#chId': 'channelId'
-    },
-    ExpressionAttributeValues: {
-      ':id': channelId
-    },
-    Select: 'ALL_ATTRIBUTES',
-    ScanIndexForward: sortAsc,
-    Limit: 10
-  }
-  if (lastKey) {
-    params.ExclusiveStartKey = lastKey
-  }
-  return dynDb.query(params).promise()
-    .then(data => {
-      let results = {
-        channelId,
-        items: data.Items
-      }
-      if (data.LastEvaluatedKey) {
-        results.lastKey = data.LastEvaluatedKey
-      }
-      return results
-    })
+  return findCredentials().then(() => {
+    let params = {
+      TableName: itemTbl,
+      IndexName: 'ChannelIndex',
+      KeyConditionExpression: '#chId = :id',
+      ExpressionAttributeNames: {
+        '#chId': 'channelId'
+      },
+      ExpressionAttributeValues: {
+        ':id': channelId
+      },
+      Select: 'ALL_ATTRIBUTES',
+      ScanIndexForward: sortAsc,
+      Limit: 10
+    }
+    if (lastKey) {
+      params.ExclusiveStartKey = lastKey
+    }
+    return dynDb.query(params).promise()
+      .then(data => {
+        let results = {
+          channelId,
+          items: data.Items
+        }
+        if (data.LastEvaluatedKey) {
+          results.lastKey = data.LastEvaluatedKey
+        }
+        return results
+      })
+  })
 }
 
 api.signUp = function(user) {
@@ -219,11 +240,28 @@ api.getCurrentUser = function() {
 }
 
 api.subscribe = function(feedUrl) {
-  return findHeaders().then(headers => {
-    return http.post('/subscribe', JSON.stringify({feedUrl}), {headers})
-  }).then(({ data }) => {
-    let { items, ...channel } = data
-    return { items, channel }
+  return findCredentials().then(({accessKeyId, secretAccessKey, sessionToken}) => {
+    let body = {feedUrl}
+    let opts = {
+      service: 'execute-api',
+      host: apiHost,
+      url: `${apiScheme}://${apiHost}/${apiStage}/subscribe`,
+      path: `/${apiStage}/subscribe`,
+      data: JSON.stringify(body),
+      body: JSON.stringify(body),
+      headers: {
+        'content-type': 'application/json'
+      }
+    }
+    let signedRequest = aws4.sign(opts, {
+      secretAccessKey,
+      accessKeyId,
+      sessionToken
+    })
+    delete signedRequest.headers['Host']
+    delete signedRequest.headers['Content-Length']
+
+    return axios(signedRequest).then(({data}) => data)
   })
 }
 

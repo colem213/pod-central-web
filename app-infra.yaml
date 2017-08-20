@@ -1,3 +1,4 @@
+Description: Pod Central Web App
 Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
@@ -45,27 +46,24 @@ Resources:
               'ForAnyValue:StringLike':
                 'cognito-identity.amazonaws.com:amr': 'authenticated'
       Policies:
-        - PolicyName: AuthWebSubscriptionQueryAllIndexes
+        - PolicyName: AuthWebSubscriptionQueryAndSubDateIndex
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Sid: SubscriptionQueryAllIndexes
-                Effect: Allow
-                Action:
-                  - 'dynamodb:Query'
-                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}/index/*
-                Condition:
-                  'ForAllValues:StringEquals':
-                    'dynamodb:LeadingKeys':
-                      - ${cognito-identity.amazonaws.com:sub}
-        - PolicyName: AuthWebChannelQueryChannel
+              - Effect: Allow
+                Action: 'dynamodb:Query'
+                Resource:
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}/index/SubDateIndex
+        - PolicyName: AuthWebChannelGet
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Sid: ChannelQueryChannel
                 Effect: Allow
                 Action:
-                  - 'dynamodb:Query'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:BatchGetItem'
                 Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ChannelTable}
         - PolicyName: AuthWebItemQueryChannelIndex
           PolicyDocument:
@@ -73,8 +71,7 @@ Resources:
             Statement:
               - Sid: ItemQueryChannelIndex
                 Effect: Allow
-                Action:
-                  - 'dynamodb:Query'
+                Action: 'dynamodb:Query'
                 Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ItemTable}/index/ChannelIndex
   IdentityPoolRoles:
     Type: AWS::Cognito::IdentityPoolRoleAttachment
@@ -85,6 +82,7 @@ Resources:
   ChannelTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      TableName: !Sub '${AWS::StackName}Channel'
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
@@ -97,6 +95,7 @@ Resources:
   ItemTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      TableName: !Sub '${AWS::StackName}Item'
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
@@ -126,6 +125,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DependsOn: ItemTable
     Properties:
+      TableName: !Sub '${AWS::StackName}Subscription'
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S
@@ -157,3 +157,11 @@ Outputs:
   clientId:
     Description: User Pool Web Client ID
     Value: !Ref WebUserPoolClient
+  identityPoolId:
+    Description: Identity Pool ID
+    Value: !Ref IdentityPool
+  webUserRole:
+    Description: Web User Security Role
+    Value: !Ref AuthWebRole
+    Export:
+      Name: !Sub '${AWS::StackName}AuthWebRole'

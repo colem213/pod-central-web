@@ -22,6 +22,7 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.vue', '.json'],
     alias: {
+      querystring: 'querystring-browser',
       'vue$': 'vue/dist/vue.esm.js',
       '@': resolve('src')
     }
