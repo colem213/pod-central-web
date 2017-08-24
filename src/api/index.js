@@ -14,8 +14,8 @@ let channelTbl = process.env.AWS_DYNDB_CHANNEL_TABLE
 let itemTbl = process.env.AWS_DYNDB_ITEM_TABLE
 let subTbl = process.env.AWS_DYNDB_SUBSCRIPTION_TABLE
 let apiHost = process.env.AWS_API_HOST
-let apiStage = process.env.AWS_API_STAGE
-let apiScheme = process.env.NODE_ENV === 'production' || apiHost !== 'localhost'
+let apiStage = process.env.AWS_API_STAGE || ''
+let apiScheme = process.env.NODE_ENV === 'production' || apiHost.indexOf('localhost') === -1
   ? 'https' : 'http'
 
 let endpoint = process.env.NODE_ENV === 'production'
