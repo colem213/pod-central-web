@@ -1,4 +1,5 @@
 Description: Pod Central Web App
+Transform: AWS::Serverless-2016-10-31
 Parameters:
   DomainName:
     Type: String
@@ -58,8 +59,8 @@ Resources:
               - Effect: Allow
                 Action: 'dynamodb:Query'
                 Resource:
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}/index/SubDateIndex
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Subscription}
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Subscription}/index/SubDateIndex
         - PolicyName: AuthWebChannelGet
           PolicyDocument:
             Version: '2012-10-17'
@@ -69,7 +70,7 @@ Resources:
                 Action:
                   - 'dynamodb:GetItem'
                   - 'dynamodb:BatchGetItem'
-                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ChannelTable}
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Channel}
         - PolicyName: AuthWebItemQueryChannelIndex
           PolicyDocument:
             Version: '2012-10-17'
@@ -77,17 +78,26 @@ Resources:
               - Sid: ItemQueryChannelIndex
                 Effect: Allow
                 Action: 'dynamodb:Query'
-                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ItemTable}/index/ChannelIndex
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Item}/index/ChannelIndex
+        - PolicyName: AuthWebRssFeedLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 'execute-api:Invoke'
+                Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RssFeedApi}/${AWS::StackName}/*/rss/*
+              - Effect: Allow
+                Action: 'lambda:InvokeFunction'
+                Resource: !ImportValue RssFeedSubArn
   IdentityPoolRoles:
     Type: AWS::Cognito::IdentityPoolRoleAttachment
     Properties:
       IdentityPoolId: !Ref IdentityPool
       Roles:
         authenticated: !GetAtt AuthWebRole.Arn
-  ChannelTable:
+  Channel:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub '${AWS::StackName}Channel'
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
@@ -97,10 +107,9 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
-  ItemTable:
+  Item:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub '${AWS::StackName}Item'
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
@@ -126,11 +135,10 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
-  SubscriptionTable:
+  Subscription:
     Type: AWS::DynamoDB::Table
-    DependsOn: ItemTable
+    DependsOn: Item
     Properties:
-      TableName: !Sub '${AWS::StackName}Subscription'
       AttributeDefinitions:
         - AttributeName: userId
           AttributeType: S
@@ -152,6 +160,31 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: KEYS_ONLY
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  ChannelUrl:
+    Type: AWS::DynamoDB::Table
+    DependsOn: Subscription
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: url
+          AttributeType: S
+      KeySchema:
+        - AttributeName: url
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: ChannelIndex
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+          Projection:
+            ProjectionType: KEYS_ONLY
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
@@ -205,6 +238,83 @@ Resources:
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2
           DNSName: !GetAtt WebAppDistro.DomainName
+  RssFeedApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Sub '${AWS::StackName}'
+      Variables:
+        CHANNEL_TABLE: !Ref Channel
+        ITEM_TABLE: !Ref Item
+        SUBSCRIPTION_TABLE: !Ref Subscription
+        CHANNELURL_TABLE: !Ref ChannelUrl
+      DefinitionBody:
+        swagger: '2.0'
+        info:
+          version: '1.0'
+          title:
+            Fn::Sub: '${AWS::StackName} RSS Feed Subscription API'
+        basePath:
+          Fn::Sub: '/${AWS::StackName}'
+        schemes:
+          - 'https'
+        paths:
+          /rss/{proxy+}:
+            x-amazon-apigateway-any-method:
+              produces:
+                - application/json
+              parameters:
+                - name: proxy
+                  in: path
+                  required: true
+                  type: string
+              responses: {}
+              x-amazon-apigateway-auth:
+                type: AWS_IAM
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: '200'
+                uri:
+                  Fn::Join:
+                    - ''
+                    -
+                      - 'arn:aws:apigateway:'
+                      - Ref: AWS::Region
+                      - ':lambda:path/2015-03-31/functions/'
+                      - Fn::ImportValue: RssFeedSubArn
+                      - '/invocations'
+                credentials: arn:aws:iam::*:user/*
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                type: aws_proxy
+            options:
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              responses:
+                '200':
+                  description: Default response for CORS method
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: string
+                    Access-Control-Allow-Methods:
+                      type: string
+                    Access-Control-Allow-Headers:
+                      type: string
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Methods: "'POST,GET,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                requestTemplates:
+                  application/json: |
+                    {"statusCode": 200}
+                passthroughBehavior: when_no_match
+                type: mock
 Outputs:
   userPoolId:
     Description: User Pool ID
@@ -215,8 +325,18 @@ Outputs:
   identityPoolId:
     Description: Identity Pool ID
     Value: !Ref IdentityPool
-  webUserRole:
-    Description: Web User Security Role
-    Value: !Ref AuthWebRole
-    Export:
-      Name: !Sub '${AWS::StackName}AuthWebRole'
+  feedApiHost:
+    Description: Rss Feed API Host
+    Value: !Sub ${RssFeedApi}.execute-api.${AWS::Region}.amazonaws.com
+  feedApiStage:
+    Description: Rss Feed API Stage
+    Value: !Ref AWS::StackName
+  channelTable:
+    Description: Channel Table Name
+    Value: !Ref Channel
+  itemTable:
+    Description: Item Table Name
+    Value: !Ref Item
+  subscriptionTable:
+    Description: Subscription Table Name
+    Value: !Ref Subscription

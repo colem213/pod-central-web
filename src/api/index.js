@@ -245,8 +245,8 @@ api.subscribe = function(feedUrl) {
     let opts = {
       service: 'execute-api',
       host: apiHost,
-      url: `${apiScheme}://${apiHost}/${apiStage}/subscribe`,
-      path: `/${apiStage}/subscribe`,
+      url: `${apiScheme}://${apiHost}/${apiStage}/rss/subscribe`,
+      path: `/${apiStage}/rss/subscribe`,
       data: JSON.stringify(body),
       body: JSON.stringify(body),
       headers: {
