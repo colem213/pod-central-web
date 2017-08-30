@@ -1,0 +1,51 @@
+{
+  "Parameters": {
+    "DomainName": "podcentral.io",
+    "RssFeedStage": "prod"
+  },
+  "StackPolicy" : {
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : "Update:*",
+        "Principal": "*",
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Deny",
+        "NotAction" : "Update:Modify",
+        "Principal": "*",
+        "Resource" : "LogicalResourceId/UserPool"
+      },
+      {
+        "Effect" : "Deny",
+        "NotAction" : "Update:Modify",
+        "Principal": "*",
+        "Resource" : "LogicalResourceId/IdentityPool"
+      },
+      {
+        "Effect" : "Deny",
+        "NotAction" : "Update:Modify",
+        "Principal": "*",
+        "Resource" : "LogicalResourceId/WebAppOrigin"
+      },
+      {
+        "Effect" : "Deny",
+        "NotAction" : "Update:Modify",
+        "Principal": "*",
+        "Resource" : "LogicalResourceId/WebAppDistro"
+      },
+      {
+        "Effect" : "Deny",
+        "NotAction" : "Update:Modify",
+        "Principal" : "*",
+        "Resource" : "*",
+        "Condition" : {
+          "StringEquals" : {
+            "ResourceType" : ["AWS::DynamoDB::Table"]
+          }
+        }
+      }
+    ]
+  }
+}

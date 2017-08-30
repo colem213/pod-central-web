@@ -1,0 +1,25 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+      - echo "deb http://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+      - apt-get update && apt-get install -y yarn jq
+  pre_build:
+    commands:
+      - yarn install --frozen-lockfile
+      - aws cloudformation describe-stacks --stack-name $STACK_NAME | jq -r '.Stacks[0].Outputs' > outputs.json
+      - echo "AWS_COGNITO_USER_POOL_ID=$(jq -r '.[] | select(.OutputKey=="userPoolId").OutputValue' outputs.json)" >> .env
+      - echo "AWS_COGNITO_CLIENT_ID=$(jq -r '.[] | select(.OutputKey=="clientId").OutputValue' outputs.json)" >> .env
+      - echo "AWS_COGNITO_IDENTITY_POOL_ID=$(jq -r '.[] | select(.OutputKey=="identityPoolId").OutputValue' outputs.json)" >> .env
+      - echo "AWS_API_HOST=$(jq -r '.[] | select(.OutputKey=="feedApiHost").OutputValue' outputs.json)" >> .env
+      - echo "AWS_API_STAGE=$(jq -r '.[] | select(.OutputKey=="feedApiStage").OutputValue' outputs.json)" >> .env
+      - echo "AWS_DYNDB_CHANNEL_TABLE=$(jq -r '.[] | select(.OutputKey=="channelTable").OutputValue' outputs.json)" >> .env
+      - echo "AWS_DYNDB_ITEM_TABLE=$(jq -r '.[] | select(.OutputKey=="itemTable").OutputValue' outputs.json)" >> .env
+      - echo "AWS_DYNDB_SUBSCRIPTION_TABLE=$(jq -r '.[] | select(.OutputKey=="subscriptionTable").OutputValue' outputs.json)" >> .env
+  build:
+    commands:
+      - yarn run build
+  post_build:
+    commands:
+      - aws s3 sync --delete dist/ "s3://${SITE_BUCKET}"
