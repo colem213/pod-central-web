@@ -232,6 +232,10 @@ Resources:
           ViewerProtocolPolicy: redirect-to-https
           ForwardedValues:
             QueryString: false
+        CustomErrorResponses:
+          - ErrorCode: '404'
+            ResponseCode: '200'
+            ResponsePagePath: /index.html
   WebAppDns:
     Type: AWS::Route53::RecordSetGroup
     Properties:
