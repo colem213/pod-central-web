@@ -41,6 +41,7 @@ Resources:
           ProviderName: !GetAtt UserPool.ProviderName
   AuthWebRole:
     Type: AWS::IAM::Role
+    Condition: IsProduction
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -95,12 +96,14 @@ Resources:
                 Resource: !ImportValue RssFeedSubArn
   IdentityPoolRoles:
     Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Condition: IsProduction
     Properties:
       IdentityPoolId: !Ref IdentityPool
       Roles:
         authenticated: !GetAtt AuthWebRole.Arn
   ChannelTable:
     Type: AWS::DynamoDB::Table
+    Condition: IsProduction
     Properties:
       AttributeDefinitions:
         - AttributeName: id
@@ -113,6 +116,7 @@ Resources:
         WriteCapacityUnits: 1
   ItemTable:
     Type: AWS::DynamoDB::Table
+    Condition: IsProduction
     Properties:
       AttributeDefinitions:
         - AttributeName: id
@@ -141,6 +145,7 @@ Resources:
         WriteCapacityUnits: 1
   SubscriptionTable:
     Type: AWS::DynamoDB::Table
+    Condition: IsProduction
     DependsOn: ItemTable
     Properties:
       AttributeDefinitions:
@@ -169,6 +174,7 @@ Resources:
         WriteCapacityUnits: 1
   ChannelUrlTable:
     Type: AWS::DynamoDB::Table
+    Condition: IsProduction
     DependsOn: SubscriptionTable
     Properties:
       AttributeDefinitions:
@@ -194,6 +200,7 @@ Resources:
         WriteCapacityUnits: 1
   WebAppOrigin:
     Type: AWS::S3::Bucket
+    Condition: IsProduction
     Properties:
       BucketName: !Ref DomainName
       AccessControl: PublicRead
@@ -201,6 +208,7 @@ Resources:
         IndexDocument: index.html
   WebAppOriginPolicy:
     Type: AWS::S3::BucketPolicy
+    Condition: IsProduction
     Properties:
       Bucket: !Ref WebAppOrigin
       PolicyDocument:
@@ -213,6 +221,7 @@ Resources:
           Resource: !Sub '${WebAppOrigin.Arn}/*'
   WebAppDistro:
     Type: AWS::CloudFront::Distribution
+    Condition: IsProduction
     Properties:
       DistributionConfig:
         Enabled: true
@@ -238,6 +247,7 @@ Resources:
             ResponsePagePath: /index.html
   WebAppDns:
     Type: AWS::Route53::RecordSetGroup
+    Condition: IsProduction
     Properties:
       HostedZoneName: podcentral.io.
       RecordSets:
@@ -248,6 +258,7 @@ Resources:
           DNSName: !GetAtt WebAppDistro.DomainName
   RssFeedApi:
     Type: AWS::Serverless::Api
+    Condition: IsProduction
     Properties:
       StageName: !Ref RssFeedStage
       Variables:
@@ -334,17 +345,22 @@ Outputs:
     Description: Identity Pool ID
     Value: !Ref IdentityPool
   feedApiHost:
+    Condition: IsProduction
     Description: Rss Feed API Host
     Value: !Sub ${RssFeedApi}.execute-api.${AWS::Region}.amazonaws.com
   feedApiStage:
+    Condition: IsProduction
     Description: Rss Feed API Stage
     Value: !Ref RssFeedStage
   channelTable:
+    Condition: IsProduction
     Description: Channel Table Name
     Value: !Ref ChannelTable
   itemTable:
+    Condition: IsProduction
     Description: Item Table Name
     Value: !Ref ItemTable
   subscriptionTable:
+    Condition: IsProduction
     Description: Subscription Table Name
     Value: !Ref SubscriptionTable
