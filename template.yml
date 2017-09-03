@@ -41,13 +41,11 @@ Resources:
           ProviderName: !GetAtt UserPool.ProviderName
   AuthWebRole:
     Type: AWS::IAM::Role
-    Condition: IsProduction
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Sid: ''
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Federated: cognito-identity.amazonaws.com
             Action: 'sts:AssumeRoleWithWebIdentity'
@@ -56,47 +54,63 @@ Resources:
                 'cognito-identity.amazonaws.com:aud': !Ref IdentityPool
               'ForAnyValue:StringLike':
                 'cognito-identity.amazonaws.com:amr': 'authenticated'
-      Policies:
-        - PolicyName: AuthWebSubscriptionQueryAndSubDateIndex
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: 'dynamodb:Query'
-                Resource:
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}/index/SubDateIndex
-        - PolicyName: AuthWebChannelGet
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: ChannelQueryChannel
-                Effect: Allow
-                Action:
-                  - 'dynamodb:GetItem'
-                  - 'dynamodb:BatchGetItem'
-                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ChannelTable}
-        - PolicyName: AuthWebItemQueryChannelIndex
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: ItemQueryChannelIndex
-                Effect: Allow
-                Action: 'dynamodb:Query'
-                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ItemTable}/index/ChannelIndex
-        - PolicyName: AuthWebRssFeedLambdaPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: 'execute-api:Invoke'
-                Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RssFeedApi}/${RssFeedStage}/*/rss/*
-              - Effect: Allow
-                Action: 'lambda:InvokeFunction'
-                Resource: !ImportValue RssFeedSubArn
+  SubscriptionPolicy:
+    Type: AWS::IAM::Policy
+    Condition: IsProduction
+    Properties:
+      Roles: [!Ref AuthWebRole]
+      PolicyName: ${AWS::StackName}AuthWebSubscriptionQueryAndSubDateIndex
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 'dynamodb:Query'
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}/index/SubDateIndex
+  ChannelPolicy:
+    Type: AWS::IAM::Policy
+    Condition: IsProduction
+    Properties:
+      Roles: [!Ref AuthWebRole]
+      PolicyName: ${AWS::StackName}AuthWebChannelGet
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'dynamodb:GetItem'
+              - 'dynamodb:BatchGetItem'
+            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ChannelTable}
+  ItemPolicy:
+    Type: AWS::IAM::Policy
+    Condition: IsProduction
+    Properties:
+      Roles: [!Ref AuthWebRole]
+      PolicyName: ${AWS::StackName}AuthWebItemQueryChannelIndex
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 'dynamodb:Query'
+            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ItemTable}/index/ChannelIndex
+  RssFeedApiPolicy:
+    Type: AWS::IAM::Policy
+    Condition: IsProduction
+    Properties:
+      Roles: [!Ref AuthWebRole]
+      PolicyName: ${AWS::StackName}AuthWebRssFeedLambdaPolicy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 'execute-api:Invoke'
+            Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RssFeedApi}/${RssFeedStage}/*/rss/*
+          - Effect: Allow
+            Action: 'lambda:InvokeFunction'
+            Resource: !ImportValue RssFeedSubArn
   IdentityPoolRoles:
     Type: AWS::Cognito::IdentityPoolRoleAttachment
-    Condition: IsProduction
     Properties:
       IdentityPoolId: !Ref IdentityPool
       Roles:

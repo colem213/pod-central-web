@@ -9,6 +9,7 @@ AWS.config.region = 'us-east-2'
 
 fs.appendFile('./.env', `AWS_API_HOST=http://localhost:9090${EOL}`, () => {})
 fs.appendFile('./.env', `AWS_API_STAGE=local${EOL}`, () => {})
+fs.appendFile('./.env', `AWS_DYNDB_URL=http://localhost:10500${EOL}`, () => {})
 
 let tmpl = yaml.safeLoad(fs.readFileSync('./template.yml', {encoding: 'utf-8'}), {
   schema: CFN_SCHEMA
@@ -32,18 +33,15 @@ tables.forEach(tbl => {
   })
 })
 
-function traverse(obj) {
-  if (typeof obj === 'object') {
-    Object.keys(obj).forEach(key => {
-      if (obj[key].hasOwnProperty('Condition')) {
-        delete obj[key]
-      } else {
-        traverse(obj[key])
-      }
-    })
-  }
+function conditional(obj) {
+  Object.keys(obj).forEach(key => {
+    if (obj[key].hasOwnProperty('Condition')) {
+      delete obj[key]
+    }
+  })
 }
-traverse(tmpl)
+conditional(tmpl.Resources)
+conditional(tmpl.Outputs)
 
 let tmplStr = yaml.safeDump(tmpl, {
   schema: CFN_SCHEMA
@@ -72,9 +70,9 @@ let params = {
 
 let createChangeSet = new Promise((resolve, reject) => {
   console.log(`Starting to create change set: ${params.StackName}`)
-  cf.createChangeSet(params, function(err, {StackId}) {
+  cf.createChangeSet(params, function(err, data) {
     if (err) reject(err)
-    else resolve(StackId)
+    else resolve(data.StackId)
   })
 })
 
