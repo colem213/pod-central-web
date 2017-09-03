@@ -59,7 +59,7 @@ Resources:
     Condition: IsProduction
     Properties:
       Roles: [!Ref AuthWebRole]
-      PolicyName: ${AWS::StackName}AuthWebSubscriptionQueryAndSubDateIndex
+      PolicyName: !Sub ${AWS::StackName}AuthWebSubscriptionQueryAndSubDateIndex
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -73,7 +73,7 @@ Resources:
     Condition: IsProduction
     Properties:
       Roles: [!Ref AuthWebRole]
-      PolicyName: ${AWS::StackName}AuthWebChannelGet
+      PolicyName: !Sub ${AWS::StackName}AuthWebChannelGet
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -87,7 +87,7 @@ Resources:
     Condition: IsProduction
     Properties:
       Roles: [!Ref AuthWebRole]
-      PolicyName: ${AWS::StackName}AuthWebItemQueryChannelIndex
+      PolicyName: !Sub ${AWS::StackName}AuthWebItemQueryChannelIndex
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -99,7 +99,7 @@ Resources:
     Condition: IsProduction
     Properties:
       Roles: [!Ref AuthWebRole]
-      PolicyName: ${AWS::StackName}AuthWebRssFeedLambdaPolicy
+      PolicyName: !Sub ${AWS::StackName}AuthWebRssFeedLambdaPolicy
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
