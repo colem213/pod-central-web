@@ -29,36 +29,31 @@ let userPool = new CognitoUserPool({
   ClientId: process.env.AWS_COGNITO_CLIENT_ID
 })
 
-let findCredentials = function() {
-  return findSession().then(session => {
-    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-      IdentityPoolId: identityPoolId,
-      Logins: {
-        [`cognito-idp.${awsRegion}.amazonaws.com/${userPoolId}`]: session.getIdToken().getJwtToken()
+let findSession = userPool.getCurrentUser() === null ? Promise.reject()
+  : new Promise((resolve, reject) => {
+    userPool.getCurrentUser().getSession((err, session) => {
+      if (err) reject(err)
+      else {
+        resolve(session)
       }
     })
-    dynDb = new AWS.DynamoDB.DocumentClient({endpoint})
-    return AWS.config.credentials.getPromise().then(() => AWS.config.credentials)
   })
-}
 
-let findSession = function() {
-  let cognitoUser = userPool.getCurrentUser()
-  return cognitoUser === null ? Promise.reject()
-    : new Promise((resolve, reject) => {
-      cognitoUser.getSession((err, session) => {
-        if (err) reject(err)
-        else {
-          resolve(session)
-        }
-      })
-    })
-}
+let findCredentials = findSession.then(session => {
+  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+    IdentityPoolId: identityPoolId,
+    Logins: {
+      [`cognito-idp.${awsRegion}.amazonaws.com/${userPoolId}`]: session.getIdToken().getJwtToken()
+    }
+  })
+  dynDb = new AWS.DynamoDB.DocumentClient({endpoint})
+  return AWS.config.credentials.getPromise().then(() => AWS.config.credentials)
+}).catch(() => AWS.config.credentials)
 
 let api = {}
 
 api.getAllChannels = function() {
-  return findCredentials().then(({identityId}) => {
+  return findCredentials.then(({identityId}) => {
     return dynDb.query({
       TableName: subTbl,
       KeyConditionExpression: '#userId = :id',
@@ -84,7 +79,7 @@ api.getAllChannels = function() {
 }
 
 api.getChannel = function(channelId) {
-  return findCredentials().then(() => {
+  return findCredentials.then(() => {
     return dynDb.get({
       TableName: channelTbl,
       Key: {
@@ -95,7 +90,7 @@ api.getChannel = function(channelId) {
 }
 
 api.getItemsByChannel = function({channelId, sortAsc, lastKey}) {
-  return findCredentials().then(() => {
+  return findCredentials.then(() => {
     let params = {
       TableName: itemTbl,
       IndexName: 'ChannelIndex',
@@ -226,7 +221,7 @@ api.resendConfirmCode = function(username) {
 }
 
 api.getCurrentUser = function() {
-  return findSession().then(session => {
+  return findSession.then(session => {
     return {
       isAnon: false,
       isAuth: session.isValid(),
@@ -234,13 +229,11 @@ api.getCurrentUser = function() {
         ...jwtDecode(session.getIdToken().getJwtToken())
       }
     }
-  }).catch(() => {
-    return {}
-  })
+  }).catch(() => ({}))
 }
 
 api.subscribe = function(feedUrl) {
-  return findCredentials().then(({accessKeyId, secretAccessKey, sessionToken}) => {
+  return findCredentials.then(({accessKeyId, secretAccessKey, sessionToken}) => {
     let body = {feedUrl}
     let opts = {
       service: 'execute-api',
