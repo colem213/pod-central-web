@@ -14,8 +14,9 @@ let channelTbl = process.env.AWS_DYNDB_CHANNEL_TABLE
 let itemTbl = process.env.AWS_DYNDB_ITEM_TABLE
 let subTbl = process.env.AWS_DYNDB_SUBSCRIPTION_TABLE
 let apiHost = process.env.AWS_API_HOST
+let apiLocal = apiHost.indexOf('localhost') !== -1
 let apiStage = process.env.AWS_API_STAGE
-let apiScheme = process.env.NODE_ENV === 'production' || apiHost.indexOf('localhost') === -1
+let apiScheme = process.env.NODE_ENV === 'production' || !apiLocal
   ? 'https' : 'http'
 
 let endpoint = process.env.NODE_ENV === 'production'
@@ -69,7 +70,7 @@ api.getAllChannels = function() {
     let params = {
       RequestItems: {
         [channelTbl]: {
-          Keys: Items.map(sub => { return { id: sub.channelId } })
+          Keys: Items.map(sub => ({ id: sub.channelId }))
         }
       }
     }
@@ -232,30 +233,36 @@ api.getCurrentUser = function() {
   }).catch(() => ({}))
 }
 
-api.subscribe = function(feedUrl) {
-  return findCredentials.then(({accessKeyId, secretAccessKey, sessionToken}) => {
-    let body = {feedUrl}
-    let opts = {
-      service: 'execute-api',
-      host: apiHost,
-      url: `${apiScheme}://${apiHost}/${apiStage}/rss/subscribe`,
-      path: `/${apiStage}/rss/subscribe`,
-      data: JSON.stringify(body),
-      body: JSON.stringify(body),
-      headers: {
-        'content-type': 'application/json'
-      }
+let fetch = axios.create({
+  baseURL: `${apiScheme}://${apiHost}/${apiStage}`,
+  host: `${apiHost}`
+})
+fetch.interceptors.request.use(function(config) {
+  return findCredentials.then(({accessKeyId, secretAccessKey, sessionToken, identityId}) => {
+    if (config.data) {
+      config.body = config.data
     }
-    let signedRequest = aws4.sign(opts, {
+    config = aws4.sign(config, {
       secretAccessKey,
       accessKeyId,
       sessionToken
     })
-    delete signedRequest.headers['Host']
-    delete signedRequest.headers['Content-Length']
-
-    return axios(signedRequest).then(({data}) => data)
+    if (apiLocal) {
+      config.headers['X-Amz-Identity-Id'] = identityId
+    }
+    delete config.headers['Host']
+    delete config.headers['Content-Length']
+    return config
   })
+}, function(err) {
+  return Promise.reject(err)
+})
+
+api.subscribe = function(feedUrl) {
+  return fetch.post('/rss/subscribe', JSON.stringify({feedUrl}), {
+    headers: { 'Content-Type': 'application/json' },
+    path: `/${apiStage}/rss/subscribe`
+  }).then(({data}) => data)
 }
 
 export default api
