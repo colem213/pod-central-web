@@ -4,11 +4,21 @@ Parameters:
   DomainName:
     Type: String
     AllowedPattern: .*\.?podcentral\.io$
+  IsLiveDev:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
   RssFeedStage:
     Type: String
 Conditions:
   IsApexRecord: !Equals [ !Ref DomainName, podcentral.io ]
   IsProduction: !Equals [ !Ref DomainName, podcentral.io ]
+  IsLive:
+    Fn::Or:
+      - Condition: IsProduction
+      - !Equals [ !Ref IsLiveDev, 'true' ]
 Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
@@ -56,7 +66,7 @@ Resources:
                 'cognito-identity.amazonaws.com:amr': 'authenticated'
   SubscriptionPolicy:
     Type: AWS::IAM::Policy
-    Condition: IsProduction
+    Condition: IsLive
     Properties:
       Roles: [!Ref AuthWebRole]
       PolicyName: !Sub ${AWS::StackName}AuthWebSubscriptionQueryAndSubDateIndex
@@ -70,7 +80,7 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SubscriptionTable}/index/SubDateIndex
   ChannelPolicy:
     Type: AWS::IAM::Policy
-    Condition: IsProduction
+    Condition: IsLive
     Properties:
       Roles: [!Ref AuthWebRole]
       PolicyName: !Sub ${AWS::StackName}AuthWebChannelGet
@@ -84,7 +94,7 @@ Resources:
             Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ChannelTable}
   ItemPolicy:
     Type: AWS::IAM::Policy
-    Condition: IsProduction
+    Condition: IsLive
     Properties:
       Roles: [!Ref AuthWebRole]
       PolicyName: !Sub ${AWS::StackName}AuthWebItemQueryChannelIndex
@@ -96,7 +106,7 @@ Resources:
             Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ItemTable}/index/ChannelIndex
   RssFeedApiPolicy:
     Type: AWS::IAM::Policy
-    Condition: IsProduction
+    Condition: IsLive
     Properties:
       Roles: [!Ref AuthWebRole]
       PolicyName: !Sub ${AWS::StackName}AuthWebRssFeedLambdaPolicy
@@ -117,7 +127,7 @@ Resources:
         authenticated: !GetAtt AuthWebRole.Arn
   ChannelTable:
     Type: AWS::DynamoDB::Table
-    Condition: IsProduction
+    Condition: IsLive
     Properties:
       AttributeDefinitions:
         - AttributeName: id
@@ -130,7 +140,7 @@ Resources:
         WriteCapacityUnits: 1
   ItemTable:
     Type: AWS::DynamoDB::Table
-    Condition: IsProduction
+    Condition: IsLive
     Properties:
       AttributeDefinitions:
         - AttributeName: id
@@ -159,7 +169,7 @@ Resources:
         WriteCapacityUnits: 1
   SubscriptionTable:
     Type: AWS::DynamoDB::Table
-    Condition: IsProduction
+    Condition: IsLive
     DependsOn: ItemTable
     Properties:
       AttributeDefinitions:
@@ -188,7 +198,7 @@ Resources:
         WriteCapacityUnits: 1
   ChannelUrlTable:
     Type: AWS::DynamoDB::Table
-    Condition: IsProduction
+    Condition: IsLive
     DependsOn: SubscriptionTable
     Properties:
       AttributeDefinitions:
@@ -272,7 +282,7 @@ Resources:
           DNSName: !GetAtt WebAppDistro.DomainName
   RssFeedApi:
     Type: AWS::Serverless::Api
-    Condition: IsProduction
+    Condition: IsLive
     Properties:
       StageName: !Ref RssFeedStage
       Variables:
@@ -359,22 +369,22 @@ Outputs:
     Description: Identity Pool ID
     Value: !Ref IdentityPool
   feedApiHost:
-    Condition: IsProduction
+    Condition: IsLive
     Description: Rss Feed API Host
     Value: !Sub ${RssFeedApi}.execute-api.${AWS::Region}.amazonaws.com
   feedApiStage:
-    Condition: IsProduction
+    Condition: IsLive
     Description: Rss Feed API Stage
     Value: !Ref RssFeedStage
   channelTable:
-    Condition: IsProduction
+    Condition: IsLive
     Description: Channel Table Name
     Value: !Ref ChannelTable
   itemTable:
-    Condition: IsProduction
+    Condition: IsLive
     Description: Item Table Name
     Value: !Ref ItemTable
   subscriptionTable:
-    Condition: IsProduction
+    Condition: IsLive
     Description: Subscription Table Name
     Value: !Ref SubscriptionTable

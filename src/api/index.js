@@ -8,26 +8,26 @@ let awsRegion = process.env.AWS_REGION
 
 AWS.config.region = awsRegion
 
-let userPoolId = process.env.AWS_COGNITO_USER_POOL_ID
+let userPoolId = process.env.AWS_USER_POOL_ID
 let awsDynDbEndpoint = `https://dynamodb.${awsRegion}.amazonaws.com`
 let channelTbl = process.env.AWS_DYNDB_CHANNEL_TABLE
 let itemTbl = process.env.AWS_DYNDB_ITEM_TABLE
 let subTbl = process.env.AWS_DYNDB_SUBSCRIPTION_TABLE
-let apiHost = process.env.AWS_API_HOST
+let apiHost = process.env.AWS_FEED_API_HOST
 let apiLocal = apiHost.indexOf('localhost') !== -1
-let apiStage = process.env.AWS_API_STAGE
+let apiStage = process.env.AWS_FEED_API_STAGE
 let apiScheme = process.env.NODE_ENV === 'production' || !apiLocal
   ? 'https' : 'http'
 
 let endpoint = process.env.NODE_ENV === 'production'
   ? awsDynDbEndpoint : process.env.AWS_DYNDB_URL || awsDynDbEndpoint
-let identityPoolId = process.env.AWS_COGNITO_IDENTITY_POOL_ID
+let identityPoolId = process.env.AWS_IDENTITY_POOL_ID
 
 let dynDb
 
 let userPool = new CognitoUserPool({
   UserPoolId: userPoolId,
-  ClientId: process.env.AWS_COGNITO_CLIENT_ID
+  ClientId: process.env.AWS_CLIENT_ID
 })
 
 let findSession = userPool.getCurrentUser() === null ? Promise.reject()
