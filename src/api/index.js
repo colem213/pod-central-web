@@ -10,9 +10,9 @@ AWS.config.region = awsRegion
 
 let userPoolId = process.env.AWS_USER_POOL_ID
 let awsDynDbEndpoint = `https://dynamodb.${awsRegion}.amazonaws.com`
-let channelTbl = process.env.AWS_DYNDB_CHANNEL_TABLE
-let itemTbl = process.env.AWS_DYNDB_ITEM_TABLE
-let subTbl = process.env.AWS_DYNDB_SUBSCRIPTION_TABLE
+let channelTbl = process.env.AWS_CHANNEL_TABLE
+let itemTbl = process.env.AWS_ITEM_TABLE
+let subTbl = process.env.AWS_SUBSCRIPTION_TABLE
 let apiHost = process.env.AWS_FEED_API_HOST
 let apiLocal = apiHost.indexOf('localhost') !== -1
 let apiStage = process.env.AWS_FEED_API_STAGE
