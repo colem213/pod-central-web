@@ -16,8 +16,8 @@ Conditions:
   IsApexRecord: !Equals [ !Ref DomainName, podcentral.io ]
   IsProduction: !Equals [ !Ref DomainName, podcentral.io ]
   IsLive:
-    Fn::Or:
-      - Condition: IsProduction
+    !Or:
+      - !Condition IsProduction
       - !Equals [ !Ref IsLiveDev, 'true' ]
 Resources:
   UserPool:
