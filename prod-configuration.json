@@ -1,6 +1,7 @@
 {
   "Parameters": {
-    "DomainName": "podcentral.io",
+    "SubDomain": "",
+    "Env": "prod",
     "RssFeedStage": "prod"
   },
   "StackPolicy" : {

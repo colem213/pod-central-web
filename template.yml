@@ -1,24 +1,30 @@
 Description: Pod Central Web App
 Transform: AWS::Serverless-2016-10-31
 Parameters:
-  DomainName:
+  SubDomain:
     Type: String
-    AllowedPattern: .*\.?podcentral\.io$
-  IsLiveDev:
+    Default: ''
+  Env:
     Type: String
-    Default: 'false'
+    Default: 'local'
     AllowedValues:
-      - 'true'
-      - 'false'
+      - 'local'
+      - 'live'
+      - 'full'
+      - 'prod'
   RssFeedStage:
     Type: String
 Conditions:
-  IsApexRecord: !Equals [ !Ref DomainName, podcentral.io ]
-  IsProduction: !Equals [ !Ref DomainName, podcentral.io ]
+  IsProduction: !Equals [ !Ref Env, prod ]
   IsLive:
     Fn::Or:
       - !Condition IsProduction
-      - !Equals [ !Ref IsLiveDev, 'true' ]
+      - Fn::Not:
+        - !Equals [ !Ref Env, 'local' ]
+  IsFull:
+    Fn::Or:
+      - !Condition IsProduction
+      - !Equals [ !Ref Env, 'full' ]
 Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
@@ -224,15 +230,15 @@ Resources:
         WriteCapacityUnits: 1
   WebAppOrigin:
     Type: AWS::S3::Bucket
-    Condition: IsProduction
+    Condition: IsFull
     Properties:
-      BucketName: !Ref DomainName
+      BucketName: !If [ IsProduction, 'podcentral.io', !Sub '${SubDomain}.podcentral.io' ]
       AccessControl: PublicRead
       WebsiteConfiguration:
         IndexDocument: index.html
   WebAppOriginPolicy:
     Type: AWS::S3::BucketPolicy
-    Condition: IsProduction
+    Condition: IsFull
     Properties:
       Bucket: !Ref WebAppOrigin
       PolicyDocument:
@@ -245,7 +251,7 @@ Resources:
           Resource: !Sub '${WebAppOrigin.Arn}/*'
   WebAppDistro:
     Type: AWS::CloudFront::Distribution
-    Condition: IsProduction
+    Condition: IsFull
     Properties:
       DistributionConfig:
         Enabled: true
@@ -254,7 +260,7 @@ Resources:
           AcmCertificateArn: arn:aws:acm:us-east-1:423601402625:certificate/80bf49ec-7e5f-429a-acf3-36f04215b63c
           SslSupportMethod: sni-only
         Aliases:
-          - !Ref DomainName
+          - !If [ IsProduction, 'podcentral.io', !Sub '${SubDomain}.podcentral.io' ]
         Origins:
           - Id: !Sub ${AWS::StackName}WebAppOrigin
             DomainName: !GetAtt WebAppOrigin.DomainName
@@ -271,12 +277,12 @@ Resources:
             ResponsePagePath: /index.html
   WebAppDns:
     Type: AWS::Route53::RecordSetGroup
-    Condition: IsProduction
+    Condition: IsFull
     Properties:
       HostedZoneName: podcentral.io.
       RecordSets:
-      - Name: !Ref 'DomainName'
-        Type: !If [ IsApexRecord, A, CNAME ]
+      - Name: !If [ IsProduction, 'podcentral.io', !Sub '${SubDomain}.podcentral.io' ]
+        Type: A
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2
           DNSName: !GetAtt WebAppDistro.DomainName
