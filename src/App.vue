@@ -1,27 +1,15 @@
-<template>
-  <div id="app">
-    <notify />
-    <md-theme md-name="header">
-      <md-whiteframe>
-        <md-toolbar>
-          <md-layout md-row>
-            <md-layout md-vertical-align="center">
-              <router-link :to="{name: 'Home'}">
-                <h1 class="md-title">Pod Central</h1>
-              </router-link>
-            </md-layout>
-            <confirm-code/>
-            <sign-in/>
-            <sign-out/>
-            <sign-up/>
-          </md-layout>
-        </md-toolbar>
-      </md-whiteframe>
-    </md-theme>
-    <md-theme md-name="body" class="content">
-      <router-view></router-view>
-    </md-theme>
-  </div>
+<template lang="pug">
+  #app.container
+    .row
+      notify
+      .row
+        router-link(:to="{name: 'Home'}")
+          h1 Pod Central
+        confirm-code
+        sign-in
+        sign-out
+        sign-up
+      router-view
 </template>
 
 <script>
@@ -46,8 +34,5 @@ export default {
 }
 </script>
 
-<style scoped>
-.content {
-  padding: 10px 2%;
-}
+<style>
 </style>
