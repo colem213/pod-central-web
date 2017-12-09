@@ -75,14 +75,6 @@ if (args.env) {
     ChangeSetType: 'UPDATE',
     Parameters: [
       {
-        ParameterKey: 'DomainName',
-        ParameterValue: 'local.podcentral.io'
-      },
-      {
-        ParameterKey: 'IsLiveDev',
-        ParameterValue: args.live.toString()
-      },
-      {
         ParameterKey: 'RssFeedStage',
         ParameterValue: ChangeSetName
       }

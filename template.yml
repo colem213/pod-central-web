@@ -18,12 +18,12 @@ Conditions:
   IsProduction: !Equals [ !Ref Env, prod ]
   IsLive:
     Fn::Or:
-      - !Condition IsProduction
+      - Condition: IsProduction
       - Fn::Not:
         - !Equals [ !Ref Env, 'local' ]
   IsFull:
     Fn::Or:
-      - !Condition IsProduction
+      - Condition: IsProduction
       - !Equals [ !Ref Env, 'full' ]
 Resources:
   UserPool:
