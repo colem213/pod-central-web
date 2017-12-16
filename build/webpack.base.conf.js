@@ -25,7 +25,8 @@ module.exports = {
     alias: {
       querystring: 'querystring-browser',
       'vue$': 'vue/dist/vue.esm.js',
-      '@': resolve('src')
+      '@': resolve('src'),
+      '@module': resolve('node_modules')
     }
   },
   plugins: [

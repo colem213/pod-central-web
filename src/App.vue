@@ -1,38 +1,24 @@
 <template lang="pug">
-  #app.container
+  #app.container-fluid
+    Navigation
     .row
-      notify
-      .row
-        router-link(:to="{name: 'Home'}")
-          h1 Pod Central
-        confirm-code
-        sign-in
-        sign-out
-        sign-up
-      router-view
+      .col-sm-12
+        router-view
 </template>
 
 <script>
-import SignIn from '@/components/SignIn'
-import SignUp from '@/components/SignUp'
-import SignOut from '@/components/SignOut'
-import ConfirmCode from '@/components/ConfirmCode'
-import Notify from '@/components/Notify'
+import Navigation from '@/components/Navigation'
 
 export default {
   name: 'app',
-  components: {
-    SignIn,
-    SignUp,
-    SignOut,
-    ConfirmCode,
-    Notify
-  },
   created() {
     this.$store.dispatch('getCurrentUser')
+  },
+  components: {
+    Navigation
   }
 }
 </script>
 
-<style>
+<style lang="scss">
 </style>
