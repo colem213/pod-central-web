@@ -1,9 +1,7 @@
 <template lang="pug">
   #app.container-fluid
     Navigation
-    .row
-      .col-sm-12
-        router-view
+    router-view
 </template>
 
 <script>

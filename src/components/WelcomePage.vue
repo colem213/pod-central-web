@@ -1,13 +1,18 @@
 <template lang="pug">
-  .row
-    .col-sm-12
-      h1 Welcome to Pod Central
-    .col-sm-12
-      p Sign up to get started with your new favorite podcasting app!
+  .row.justify-content-center
+    .col-sm-12.col-md-auto
+      h2 Welcome to Pod Central
+      p Save all your favorite podcasts in one app
+      SignIn
 </template>
 
 <script>
+import SignIn from '@/components/SignIn'
+
 export default {
-  name: 'welcome'
+  name: 'welcome',
+  components: {
+    SignIn
+  }
 }
 </script>
