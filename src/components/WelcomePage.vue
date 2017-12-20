@@ -1,18 +1,18 @@
 <template lang="pug">
-  .row.justify-content-center
-    .col-sm-12.col-md-auto
-      h2 Welcome to Pod Central
+  .row
+    .col-auto
+      h2 Welcome to 
+        PODCentral
       p Save all your favorite podcasts in one app
-      SignIn
 </template>
 
 <script>
-import SignIn from '@/components/SignIn'
+import PODCentral from '@/components/PODCentral'
 
 export default {
   name: 'welcome',
   components: {
-    SignIn
+    PODCentral
   }
 }
 </script>

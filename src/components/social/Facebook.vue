@@ -1,6 +1,6 @@
 <template lang="pug">
-  .fb-login.rounded.px-2.py-1
-    img.logo.img-fluid.rounded.align-top(:src="fbLogo",alt="Facebook Logo")
+  .fb-login.rounded
+    img.social-logo.img-fluid.rounded.align-top(:src="fbLogo",alt="Facebook Logo")
     | Login with Facebook
 </template>
 
@@ -17,14 +17,11 @@ export default {
 }
 </script>
 
-<style scoped>
-  .logo {
-    width: 1.5em;
-    margin-right: 0.5em;
-  }
+<style lang="scss" scoped>
+  @import "../../sass/social";
+
   .fb-login {
-    font-weight: 600;
+    @extend .social-login;
     background-color: #4267B2;
-    color: white;
   }
 </style>

@@ -1,6 +1,6 @@
 <template lang="pug">
-  .google-login.rounded.px-2.py-1
-    img.logo.img-fluid.rounded.align-top(:src="googleLogo",alt="Google Logo")
+  .google-login.rounded
+    img.social-logo.img-fluid.rounded.align-top(:src="googleLogo",alt="Google Logo")
     | Login with Google
 </template>
 
@@ -17,14 +17,11 @@ export default {
 }
 </script>
 
-<style scoped>
-  .logo {
-    width: 1.5em;
-    margin-right: 0.5em;
-  }
+<style lang="scss" scoped>
+  @import "../../sass/social";
+
   .google-login {
-    font-weight: 600;
+    @extend .social-login;
     background-color: #dd4b39;
-    color: white;
   }
 </style>

@@ -1,7 +1,9 @@
 <template lang="pug">
   #app.container-fluid
     Navigation
-    router-view
+    .row.justify-content-center
+      .col-auto
+        router-view
 </template>
 
 <script>
